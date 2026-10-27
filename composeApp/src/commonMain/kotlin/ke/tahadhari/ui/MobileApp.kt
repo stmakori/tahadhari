@@ -18,7 +18,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import ke.tahadhari.data.Counties
 import ke.tahadhari.data.County
+import ke.tahadhari.data.guides.SafetyGuides
 import ke.tahadhari.domain.Language
+import ke.tahadhari.ui.mobile.CheckInRow
 import ke.tahadhari.ui.mobile.CountyPickerScreen
 import ke.tahadhari.ui.mobile.EmergencyScreen
 import ke.tahadhari.ui.mobile.SafetyScreen
@@ -47,22 +49,38 @@ fun MobileApp(
     onLanguageChange: (Language) -> Unit = {},
     statusLine: (@Composable (LoadState.Ready) -> Unit)? = null,
     darkTheme: Boolean = isSystemInDarkTheme(),
+    initialTab: MobileTab = MobileTab.ALERTS,
+    initialGuideId: String? = null,
 ) {
     TahadhariTheme(darkTheme) {
         var language by rememberSaveable { mutableStateOf(initialLanguage) }
         var countyCode by rememberSaveable { mutableStateOf(initialCountyCode?.takeIf { Counties.byCode(it) != null }) }
-        var tab by rememberSaveable { mutableStateOf(MobileTab.ALERTS) }
+        var tab by rememberSaveable { mutableStateOf(initialTab) }
+        var guideId by rememberSaveable { mutableStateOf(initialGuideId?.takeIf { SafetyGuides.byId(it) != null }) }
+        val guideTicks = remember { mutableStateMapOf<String, Boolean>() } // in memory only, by design
         val strings = Strings.of(language)
         val county = countyCode?.let { Counties.byCode(it) }
+        val guide = guideId?.let { SafetyGuides.byId(it) }
 
         fun selectCounty(code: Int?) { countyCode = code; onCountyChange(code) }
         fun selectLanguage(l: Language) { language = l; onLanguageChange(l) }
 
+        // Back: guide -> guide list -> Alerts tab -> county picker -> exit.
         BackHandler(enabled = tab != MobileTab.ALERTS || county != null) {
-            if (tab != MobileTab.ALERTS) tab = MobileTab.ALERTS else selectCounty(null)
+            when {
+                tab == MobileTab.SAFETY && guide != null -> guideId = null
+                tab != MobileTab.ALERTS -> tab = MobileTab.ALERTS
+                else -> selectCounty(null)
+            }
+        }
+        fun selectTab(t: MobileTab) {
+            if (t == MobileTab.SAFETY && tab == MobileTab.SAFETY) guideId = null // re-tap returns to the list
+            tab = t
         }
 
-        val showBack = tab == MobileTab.ALERTS && county != null
+        val countyBack = tab == MobileTab.ALERTS && county != null
+        val guideBack = tab == MobileTab.SAFETY && guide != null
+        val showBack = countyBack || guideBack
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -70,7 +88,11 @@ fun MobileApp(
                         Column {
                             Text(strings.appName, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
                             Text(
-                                if (showBack) strings.countyLabel(county!!.name) else strings.tagline,
+                                when {
+                                    countyBack -> strings.countyLabel(county!!.name)
+                                    guideBack -> guide!!.content(language).title
+                                    else -> strings.tagline
+                                },
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
@@ -78,7 +100,8 @@ fun MobileApp(
                         }
                     },
                     navigationIcon = {
-                        if (showBack) IconButton(onClick = { selectCounty(null) }) { Icon(AppIcons.ArrowBack, strings.allCounties) }
+                        if (countyBack) IconButton(onClick = { selectCounty(null) }) { Icon(AppIcons.ArrowBack, strings.allCounties) }
+                        else if (guideBack) IconButton(onClick = { guideId = null }) { Icon(AppIcons.ArrowBack, strings.allGuides) }
                         else AppMark(Modifier.padding(horizontal = Spacing.md).size(36.dp))
                     },
                     actions = { LanguageToggle(language, ::selectLanguage, Modifier.padding(end = Spacing.sm)) },
@@ -86,9 +109,9 @@ fun MobileApp(
             },
             bottomBar = {
                 NavigationBar {
-                    TabItem(tab, MobileTab.ALERTS, AppIcons.Bell, strings.navAlerts) { tab = it }
-                    TabItem(tab, MobileTab.SAFETY, AppIcons.Shield, strings.navSafety) { tab = it }
-                    TabItem(tab, MobileTab.EMERGENCY, AppIcons.Phone, strings.navEmergency) { tab = it }
+                    TabItem(tab, MobileTab.ALERTS, AppIcons.Bell, strings.navAlerts, ::selectTab)
+                    TabItem(tab, MobileTab.SAFETY, AppIcons.Shield, strings.navSafety, ::selectTab)
+                    TabItem(tab, MobileTab.EMERGENCY, AppIcons.Phone, strings.navEmergency, ::selectTab)
                 }
             },
         ) { padding ->
@@ -98,8 +121,8 @@ fun MobileApp(
                     if (c == null) CountyPickerScreen(strings, onPick = { selectCounty(it.code) })
                     else CountyScreen(c, language, statusLine, onChangeCounty = { selectCounty(null) })
                 }
-                MobileTab.SAFETY -> SafetyScreen(strings, language, inner)
-                MobileTab.EMERGENCY -> EmergencyScreen(strings, language, inner)
+                MobileTab.SAFETY -> SafetyScreen(strings, language, guide?.id, { guideId = it }, guideTicks, inner)
+                MobileTab.EMERGENCY -> EmergencyScreen(strings, language, county, onChooseCounty = { tab = MobileTab.ALERTS }, inner)
             }
         }
     }
@@ -140,6 +163,7 @@ private fun CountyScreen(
             Spacer(Modifier.width(Spacing.sm))
             Text(strings.changeCounty)
         }
-        Spacer(Modifier.height(Spacing.xl))
+        CheckInRow(county, strings, Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.lg))
+        Spacer(Modifier.height(Spacing.sm))
     }
 }

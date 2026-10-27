@@ -53,6 +53,10 @@ fun CountyPickerScreen(strings: Strings, onPick: (County) -> Unit, modifier: Mod
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg),
             )
         }
+        // Renders nothing on platforms without location (desktop).
+        item(key = "location") {
+            LocationCard(strings, onPick, Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.md))
+        }
         if (filtered.isEmpty()) {
             item(key = "empty") {
                 Text(

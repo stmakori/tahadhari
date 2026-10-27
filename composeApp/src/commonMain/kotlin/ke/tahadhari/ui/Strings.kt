@@ -1,5 +1,6 @@
 package ke.tahadhari.ui
 
+import ke.tahadhari.data.guides.EmergencyService
 import ke.tahadhari.domain.DataAge
 import ke.tahadhari.domain.Dates
 import ke.tahadhari.domain.Freshness
@@ -78,6 +79,50 @@ data class Strings(
     val safetyBody: String,
     val emergencyTitle: String,
     val emergencyBody: String,
+    // --- Week 5: safety guides, emergency screen, check-in, location ---
+    val guidesHeading: String,
+    val worksOffline: String,
+    val guideSectionCount: (sections: Int) -> String,
+    val guideProgress: (done: Int, total: Int) -> String,
+    val showSteps: String,
+    val hideSteps: String,
+    val allGuides: String,
+    val sourcesTitle: String,
+    val guideOfficialNote: String,
+    val emergencyNumbersTitle: String,
+    val emergencyCallHint: String,
+    val emergencyService: (EmergencyService) -> String,
+    val emergencyServiceDetail: (EmergencyService) -> String,
+    val callNumber: (number: String, service: String) -> String,
+    val numberCopied: (number: String) -> String,
+    val emergencyOfficialNote: String,
+    val hotspotsTitle: (countyName: String) -> String,
+    val hotspotsBody: String,
+    val hotspotsNone: String,
+    val hotspotsPickCounty: String,
+    val chooseCounty: String,
+    val checkInTitle: String,
+    val checkInBody: String,
+    val checkInShort: String,
+    val imSafe: String,
+    val needHelp: String,
+    val shareTitle: String,
+    val messageCopied: String,
+    /** Message the user shares. [place] is e.g. "Kisumu County" or null; [time] from [checkInTime]. */
+    val checkInSafeMessage: (place: String?, time: String) -> String,
+    val checkInHelpMessage: (place: String?, time: String) -> String,
+    /** [month] is 1–12, [hhmm] is 24-hour Nairobi time such as "14:30". */
+    val checkInTime: (day: Int, month: Int, hhmm: String) -> String,
+    val useMyLocation: String,
+    val locationPrivacy: String,
+    val locating: String,
+    val confirmCounty: (countyName: String) -> String,
+    val confirmCountyNote: String,
+    val confirmYes: String,
+    val confirmNo: String,
+    val locationDenied: String,
+    val locationUnavailable: String,
+    val locationOutsideKenya: String,
 ) {
     companion object {
         val english = Strings(
@@ -159,6 +204,62 @@ data class Strings(
             safetyBody = "How to prepare for floods, and how to stay safe during and after them.",
             emergencyTitle = "Emergency help",
             emergencyBody = "Who to call and where to get help when water rises.",
+            guidesHeading = "Safety guides",
+            worksOffline = "Works without internet",
+            guideSectionCount = { n -> if (n == 1) "1 part" else "$n parts" },
+            guideProgress = { d, t -> "$d of $t steps done" },
+            showSteps = "Show steps",
+            hideSteps = "Hide steps",
+            allGuides = "All guides",
+            sourcesTitle = "Sources",
+            guideOfficialNote = "This is general advice. Always follow instructions from county officials, " +
+                "Kenya Red Cross and the Kenya Meteorological Department.",
+            emergencyNumbersTitle = "Emergency numbers",
+            emergencyCallHint = "Tap a number to open your phone's dialer.",
+            emergencyService = { when (it) {
+                EmergencyService.POLICE_FIRE_AMBULANCE -> "Police, fire, ambulance"
+                EmergencyService.EMERGENCY_112 -> "Emergency line"
+                EmergencyService.RED_CROSS -> "Kenya Red Cross"
+            } },
+            emergencyServiceDetail = { when (it) {
+                EmergencyService.POLICE_FIRE_AMBULANCE -> "National emergency number"
+                EmergencyService.EMERGENCY_112 -> "Use it if 999 does not go through"
+                EmergencyService.RED_CROSS -> "Toll-free"
+            } },
+            callNumber = { n, s -> "Call $s, $n" },
+            numberCopied = { n -> "$n copied. Dial it from your phone." },
+            emergencyOfficialNote = "If you are in danger, call 999 or 112 now. Follow instructions from police, " +
+                "county officials and Kenya Red Cross.",
+            hotspotsTitle = { n -> "Flood-prone areas · $n County" },
+            hotspotsBody = "Stay away from these places when heavy rain is forecast.",
+            hotspotsNone = "No flood-prone areas are listed for this county yet. Follow county advisories.",
+            hotspotsPickCounty = "Choose your county to see local flood-prone areas.",
+            chooseCounty = "Choose county",
+            checkInTitle = "Tell family you're OK",
+            checkInBody = "Send a short message with your county and the time. You choose who gets it.",
+            checkInShort = "Let family know",
+            imSafe = "I'm safe",
+            needHelp = "I need help",
+            shareTitle = "Send message",
+            messageCopied = "Message copied. Paste it into SMS or WhatsApp.",
+            checkInSafeMessage = { p, t -> "I'm safe. " + (p?.let { "$it, " } ?: "") + "$t. — via Tahadhari" },
+            checkInHelpMessage = { p, t ->
+                "I need help. " + (p?.let { "$it, " } ?: "") + "$t. Please call me. — via Tahadhari"
+            },
+            checkInTime = { d, m, hhmm ->
+                val months = listOf("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+                "$d ${months[m - 1]} $hhmm"
+            },
+            useMyLocation = "Use my location",
+            locationPrivacy = "Your location stays on this phone.",
+            locating = "Finding your location…",
+            confirmCounty = { n -> "Is this your county? $n County" },
+            confirmCountyNote = "Based on the nearest county town, so it can be wrong near a border.",
+            confirmYes = "Yes, show it",
+            confirmNo = "No, I'll choose",
+            locationDenied = "Location permission was not given. You can choose your county from the list.",
+            locationUnavailable = "Couldn't find your location. Turn on location, or choose your county from the list.",
+            locationOutsideKenya = "You seem to be outside Kenya. Choose a county from the list.",
         )
 
         val swahili = Strings(
@@ -249,6 +350,67 @@ data class Strings(
             safetyBody = "Jinsi ya kujiandaa kwa mafuriko, na jinsi ya kukaa salama wakati wa mafuriko na baada yake.",
             emergencyTitle = "Msaada wa dharura",
             emergencyBody = "Nani wa kupigia simu na wapi kupata msaada maji yakipanda.",
+            // TODO(review): Week 5 Swahili below needs a fluent speaker's check, especially the
+            // emergency, check-in and location lines.
+            guidesHeading = "Miongozo ya usalama",
+            worksOffline = "Inafanya kazi bila mtandao",
+            guideSectionCount = { n -> if (n == 1) "Sehemu 1" else "Sehemu $n" },
+            guideProgress = { d, t -> "Hatua $d kati ya $t zimekamilika" },
+            showSteps = "Onyesha hatua",
+            hideSteps = "Ficha hatua",
+            allGuides = "Miongozo yote",
+            sourcesTitle = "Vyanzo",
+            guideOfficialNote = "Huu ni ushauri wa jumla. Fuata daima maagizo ya maafisa wa kaunti, " +
+                "Msalaba Mwekundu wa Kenya na Idara ya Hali ya Hewa Kenya.",
+            emergencyNumbersTitle = "Nambari za dharura",
+            emergencyCallHint = "Gusa nambari ili kuifungua kwenye simu yako.",
+            emergencyService = { when (it) {
+                EmergencyService.POLICE_FIRE_AMBULANCE -> "Polisi, zimamoto, ambulensi"
+                EmergencyService.EMERGENCY_112 -> "Nambari ya dharura"
+                EmergencyService.RED_CROSS -> "Msalaba Mwekundu wa Kenya"
+            } },
+            emergencyServiceDetail = { when (it) {
+                EmergencyService.POLICE_FIRE_AMBULANCE -> "Nambari ya kitaifa ya dharura"
+                EmergencyService.EMERGENCY_112 -> "Itumie 999 isipopatikana"
+                EmergencyService.RED_CROSS -> "Bila malipo"
+            } },
+            callNumber = { n, s -> "Piga simu $s, $n" },
+            numberCopied = { n -> "$n imenakiliwa. Ipige kutoka kwenye simu yako." },
+            emergencyOfficialNote = "Ukiwa hatarini, piga 999 au 112 sasa. Fuata maagizo ya polisi, " +
+                "maafisa wa kaunti na Msalaba Mwekundu wa Kenya.",
+            hotspotsTitle = { n -> "Maeneo hatari ya mafuriko · Kaunti ya $n" },
+            hotspotsBody = "Kaa mbali na maeneo haya mvua kubwa ikitabiriwa.",
+            hotspotsNone = "Bado hakuna maeneo hatari ya mafuriko yaliyoorodheshwa kwa kaunti hii. Fuata ushauri wa kaunti.",
+            hotspotsPickCounty = "Chagua kaunti yako uone maeneo hatari ya mafuriko karibu nawe.",
+            chooseCounty = "Chagua kaunti",
+            checkInTitle = "Waarifu familia kuwa uko salama",
+            checkInBody = "Tuma ujumbe mfupi wenye kaunti yako na saa. Unachagua nani aupokee.",
+            checkInShort = "Waarifu familia",
+            imSafe = "Niko salama",
+            needHelp = "Nahitaji msaada",
+            shareTitle = "Tuma ujumbe",
+            messageCopied = "Ujumbe umenakiliwa. Ubandike kwenye SMS au WhatsApp.",
+            checkInSafeMessage = { p, t -> "Niko salama. " + (p?.let { "$it, " } ?: "") + "$t. — kupitia Tahadhari" },
+            checkInHelpMessage = { p, t ->
+                "Nahitaji msaada. " + (p?.let { "$it, " } ?: "") + "$t. Tafadhali nipigie simu. — kupitia Tahadhari"
+            },
+            checkInTime = { d, m, hhmm ->
+                val months = listOf(
+                    "Januari", "Februari", "Machi", "Aprili", "Mei", "Juni",
+                    "Julai", "Agosti", "Septemba", "Oktoba", "Novemba", "Desemba",
+                )
+                "$d ${months[m - 1]} $hhmm"
+            },
+            useMyLocation = "Tumia mahali nilipo",
+            locationPrivacy = "Mahali ulipo panabaki kwenye simu hii.",
+            locating = "Inatafuta mahali ulipo…",
+            confirmCounty = { n -> "Je, hii ndiyo kaunti yako? Kaunti ya $n" },
+            confirmCountyNote = "Imetokana na mji wa kaunti ulio karibu zaidi, kwa hivyo huenda isiwe sahihi karibu na mpaka.",
+            confirmYes = "Ndiyo, ionyeshe",
+            confirmNo = "Hapana, nitachagua",
+            locationDenied = "Ruhusa ya mahali haikutolewa. Unaweza kuchagua kaunti yako kwenye orodha.",
+            locationUnavailable = "Imeshindwa kupata mahali ulipo. Washa huduma ya mahali, au chagua kaunti yako kwenye orodha.",
+            locationOutsideKenya = "Inaonekana uko nje ya Kenya. Chagua kaunti kwenye orodha.",
         )
 
         fun of(language: Language) = if (language == Language.SWAHILI) swahili else english
