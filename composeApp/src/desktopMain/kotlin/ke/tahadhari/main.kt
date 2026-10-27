@@ -1,11 +1,22 @@
 package ke.tahadhari
 
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import ke.tahadhari.ui.DashboardApp
 import ke.tahadhari.ui.MobileApp
+import ke.tahadhari.ui.dashboard.CsvExportRequest
+import ke.tahadhari.ui.dashboard.CsvExportResult
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.swing.Swing
+import kotlinx.coroutines.withContext
+import java.awt.Dimension
+import java.awt.FileDialog
+import java.awt.Frame
+import java.io.File
 
 /** Desktop dashboard. Pass `--mobile` to preview the phone UI in a phone-sized window. */
 fun main(args: Array<String>) = application {
@@ -13,8 +24,38 @@ fun main(args: Array<String>) = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "Tahadhari · Kenya flood risk dashboard",
-        state = rememberWindowState(width = if (mobile) 412.dp else 1200.dp, height = if (mobile) 860.dp else 800.dp),
+        state = rememberWindowState(width = if (mobile) 412.dp else 1480.dp, height = if (mobile) 860.dp else 900.dp),
     ) {
-        if (mobile) MobileApp() else DashboardApp()
+        if (mobile) {
+            MobileApp()
+        } else {
+            LaunchedEffect(Unit) { window.minimumSize = Dimension(960, 640) }
+            DashboardApp(onExportCsv = { saveCsv(window, it) })
+        }
+    }
+}
+
+/**
+ * Asks where to save the CSV with the native "Save" dialog on the AWT thread, then writes it as
+ * UTF-8 with a byte-order mark so spreadsheet apps read names such as Murang'a correctly.
+ */
+private suspend fun saveCsv(owner: Frame, request: CsvExportRequest): CsvExportResult {
+    val target = withContext(Dispatchers.Swing) {
+        val dialog = FileDialog(owner, request.dialogTitle, FileDialog.SAVE).apply {
+            file = request.suggestedFileName
+            isVisible = true // modal: returns when the user picks a file or cancels
+        }
+        val dir = dialog.directory
+        val name = dialog.file
+        if (dir == null || name == null) null
+        else File(dir, if (name.endsWith(".csv", ignoreCase = true)) name else "$name.csv")
+    } ?: return CsvExportResult.Cancelled
+    return try {
+        withContext(Dispatchers.IO) { target.writeText("﻿" + request.csv, Charsets.UTF_8) }
+        CsvExportResult.Saved(target.name)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        CsvExportResult.Failed(e.message ?: e::class.simpleName ?: "error")
     }
 }
