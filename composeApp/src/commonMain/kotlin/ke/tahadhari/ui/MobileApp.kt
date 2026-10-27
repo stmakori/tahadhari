@@ -131,7 +131,7 @@ private fun CountyScreen(
         state = loadCounty(county)
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        CountyDetail(county, state, language, statusLine = statusLine) { attempt++ }
+        CountyDetail(county, state, language, statusLine = statusLine ?: { DataStatusLine(it, Strings.of(language)) }) { attempt++ }
         OutlinedButton(
             onClick = onChangeCounty,
             modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg).heightIn(min = Spacing.touch),

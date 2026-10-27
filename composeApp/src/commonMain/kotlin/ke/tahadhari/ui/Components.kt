@@ -167,7 +167,7 @@ fun LoadingSkeleton(strings: Strings, modifier: Modifier = Modifier) {
  * we never fall back to "Low" when data failed to load.
  */
 @Composable
-fun ErrorState(strings: Strings, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+fun ErrorState(strings: Strings, onRetry: () -> Unit, modifier: Modifier = Modifier, message: String = strings.failed) {
     Surface(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.errorContainer) {
         Column(Modifier.padding(Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             Icon(AppIcons.CloudOff, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onErrorContainer)
@@ -175,7 +175,7 @@ fun ErrorState(strings: Strings, onRetry: () -> Unit, modifier: Modifier = Modif
                 strings.errorTitle, style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onErrorContainer, modifier = Modifier.semantics { heading() },
             )
-            Text(strings.failed, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
+            Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onErrorContainer)
             Text(strings.errorNoRisk, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
             Button(
                 onClick = onRetry,

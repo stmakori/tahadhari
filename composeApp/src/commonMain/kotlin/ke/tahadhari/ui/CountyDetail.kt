@@ -43,7 +43,7 @@ fun CountyDetail(
     state: LoadState,
     language: Language,
     modifier: Modifier = Modifier,
-    statusLine: (@Composable (LoadState.Ready) -> Unit)? = null,
+    statusLine: (@Composable (LoadState.Ready) -> Unit)? = { DataStatusLine(it, Strings.of(language)) },
     explainer: AlertExplainer = AppGraph.explainer,
     onRetry: () -> Unit,
 ) {
@@ -53,7 +53,10 @@ fun CountyDetail(
             LoadState.Loading -> LoadingSkeleton(strings)
             is LoadState.Failed -> {
                 CountyTitle(county, strings)
-                ErrorState(strings, onRetry)
+                val message = state.staleSinceMillis
+                    ?.let { strings.savedForecastTooOld(Dates.isoDateFromEpochMillis(it)) }
+                    ?: strings.failed
+                ErrorState(strings, onRetry, message = message)
             }
             is LoadState.Ready -> CountyReadyContent(
                 county, state.forecast, state.assessment, language, explainer,
