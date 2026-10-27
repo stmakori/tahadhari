@@ -6,7 +6,7 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import ke.tahadhari.ui.DashboardApp
-import ke.tahadhari.ui.MobileApp
+import ke.tahadhari.ui.MobileRoot
 import ke.tahadhari.ui.dashboard.CsvExportRequest
 import ke.tahadhari.ui.dashboard.CsvExportResult
 import kotlinx.coroutines.CancellationException
@@ -27,7 +27,7 @@ fun main(args: Array<String>) = application {
         state = rememberWindowState(width = if (mobile) 412.dp else 1480.dp, height = if (mobile) 860.dp else 900.dp),
     ) {
         if (mobile) {
-            MobileApp()
+            MobileRoot()
         } else {
             LaunchedEffect(Unit) { window.minimumSize = Dimension(960, 640) }
             DashboardApp(onExportCsv = { saveCsv(window, it) })
