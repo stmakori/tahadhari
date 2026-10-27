@@ -7,7 +7,13 @@ import io.ktor.serialization.kotlinx.json.json
 import ke.tahadhari.ai.AiExplainer
 import ke.tahadhari.ai.ProxyExplainClient
 import ke.tahadhari.ai.aiProxyUrl
+import ke.tahadhari.data.ForecastCache
 import ke.tahadhari.data.ForecastRepository
+import ke.tahadhari.data.Preferences
+import ke.tahadhari.data.store.KeyValueStore
+import ke.tahadhari.data.store.platformKeyValueStore
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import ke.tahadhari.data.remote.OpenMeteoApi
 import ke.tahadhari.domain.AlertExplainer
 import ke.tahadhari.domain.RiskEngine
@@ -29,7 +35,22 @@ object AppGraph {
         }
     }
 
-    val repository: ForecastRepository by lazy { ForecastRepository(OpenMeteoApi(httpClient)) }
+    /** Current wall-clock time in epoch millis. */
+    @OptIn(ExperimentalTime::class)
+    fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
+
+    /**
+     * Persistent key-value store (`~/.tahadhari/` on desktop, app files dir on Android).
+     * On Android, `AndroidStorage.init(context)` must run before first access, otherwise data is
+     * kept in memory only.
+     */
+    val store: KeyValueStore by lazy { platformKeyValueStore() }
+    val forecastCache: ForecastCache by lazy { ForecastCache(store) }
+    val preferences: Preferences by lazy { Preferences(store) }
+
+    val repository: ForecastRepository by lazy {
+        ForecastRepository(OpenMeteoApi(httpClient), forecastCache, ::nowMillis)
+    }
     val riskEngine: RiskEngine by lazy { RiskEngine() }
     /** AI explanations when a server URL is configured, offline templates otherwise. */
     val explainer: AlertExplainer by lazy {

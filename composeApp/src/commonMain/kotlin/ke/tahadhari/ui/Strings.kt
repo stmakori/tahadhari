@@ -1,5 +1,8 @@
 package ke.tahadhari.ui
 
+import ke.tahadhari.domain.DataAge
+import ke.tahadhari.domain.Dates
+import ke.tahadhari.domain.Freshness
 import ke.tahadhari.domain.Language
 import ke.tahadhari.domain.RiskLevel
 
@@ -22,6 +25,16 @@ data class Strings(
     val riverPeak: (river: String, m3s: Int, day: String, ratio: String) -> String,
     val loaded: (done: Int, total: Int) -> String,
     val risk: (RiskLevel) -> String,
+    // --- Week 2: offline cache / freshness ---
+    val updatedJustNow: String,
+    val updatedMinutesAgo: (minutes: Int) -> String,
+    val updatedHoursAgo: (hours: Int) -> String,
+    /** [isoDate] is yyyy-MM-dd; the lambda formats it for its language. */
+    val updatedOn: (isoDate: String) -> String,
+    /** Shown with LoadState.Ready when fromCache is true. */
+    val showingSavedForecast: String,
+    /** Shown for LoadState.Failed when staleSinceMillis is set. [isoDate] is yyyy-MM-dd. */
+    val savedForecastTooOld: (isoDate: String) -> String,
 ) {
     companion object {
         val english = Strings(
@@ -46,6 +59,14 @@ data class Strings(
                 RiskLevel.LOW -> "Low"; RiskLevel.MODERATE -> "Moderate"
                 RiskLevel.HIGH -> "High"; RiskLevel.SEVERE -> "Severe"
             } },
+            updatedJustNow = "Updated just now",
+            updatedMinutesAgo = { "Updated $it min ago" },
+            updatedHoursAgo = { "Updated $it h ago" },
+            updatedOn = { "Updated on ${Dates.shortDate(it, Language.ENGLISH)}" },
+            showingSavedForecast = "No connection. Showing the last saved forecast.",
+            savedForecastTooOld = {
+                "Couldn't load the forecast. The saved one from ${Dates.shortDate(it, Language.ENGLISH)} is too old to use."
+            },
         )
 
         val swahili = Strings(
@@ -70,8 +91,26 @@ data class Strings(
                 RiskLevel.LOW -> "Ndogo"; RiskLevel.MODERATE -> "Wastani"
                 RiskLevel.HIGH -> "Kubwa"; RiskLevel.SEVERE -> "Kubwa sana"
             } },
+            updatedJustNow = "Imesasishwa sasa hivi",
+            updatedMinutesAgo = { if (it == 1) "Imesasishwa dakika 1 iliyopita" else "Imesasishwa dakika $it zilizopita" },
+            updatedHoursAgo = { if (it == 1) "Imesasishwa saa 1 iliyopita" else "Imesasishwa saa $it zilizopita" },
+            updatedOn = { "Imesasishwa ${Dates.shortDate(it, Language.SWAHILI)}" },
+            showingSavedForecast = "Hakuna mtandao. Tunaonyesha utabiri wa mwisho uliohifadhiwa.",
+            savedForecastTooOld = {
+                "Imeshindwa kupakia utabiri. Utabiri uliohifadhiwa wa ${Dates.shortDate(it, Language.SWAHILI)} " +
+                    "ni wa zamani mno kutumika."
+            },
         )
 
         fun of(language: Language) = if (language == Language.SWAHILI) swahili else english
     }
 }
+
+/** "Updated 5 min ago" / "Updated 3 h ago" / "Updated on Tue 27 Oct" (Nairobi date). Pure: pass the clock in. */
+fun Strings.updatedText(updatedAtMillis: Long, nowMillis: Long): String =
+    when (val age = Freshness.ageOf(updatedAtMillis, nowMillis)) {
+        DataAge.JustNow -> updatedJustNow
+        is DataAge.Minutes -> updatedMinutesAgo(age.minutes)
+        is DataAge.Hours -> updatedHoursAgo(age.hours)
+        is DataAge.OnDate -> updatedOn(age.isoDate)
+    }

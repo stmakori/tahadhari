@@ -13,9 +13,14 @@ import kotlinx.serialization.Serializable
  * Forecast docs: https://open-meteo.com/en/docs
  * Flood docs (GloFAS river discharge): https://open-meteo.com/en/docs/flood-api
  */
-class OpenMeteoApi(private val client: HttpClient) {
+interface ForecastApi {
+    suspend fun dailyRainfall(point: GeoPoint, forecastDays: Int = 7): RainfallResponse
+    suspend fun riverDischarge(point: GeoPoint, pastDays: Int = 30, forecastDays: Int = 7): FloodResponse
+}
 
-    suspend fun dailyRainfall(point: GeoPoint, forecastDays: Int = 7): RainfallResponse =
+class OpenMeteoApi(private val client: HttpClient) : ForecastApi {
+
+    override suspend fun dailyRainfall(point: GeoPoint, forecastDays: Int): RainfallResponse =
         client.get("https://api.open-meteo.com/v1/forecast") {
             parameter("latitude", point.latitude)
             parameter("longitude", point.longitude)
@@ -24,7 +29,7 @@ class OpenMeteoApi(private val client: HttpClient) {
             parameter("forecast_days", forecastDays)
         }.body()
 
-    suspend fun riverDischarge(point: GeoPoint, pastDays: Int = 30, forecastDays: Int = 7): FloodResponse =
+    override suspend fun riverDischarge(point: GeoPoint, pastDays: Int, forecastDays: Int): FloodResponse =
         client.get("https://flood-api.open-meteo.com/v1/flood") {
             parameter("latitude", point.latitude)
             parameter("longitude", point.longitude)
