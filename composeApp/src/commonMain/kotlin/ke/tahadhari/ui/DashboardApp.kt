@@ -85,13 +85,13 @@ private fun AboutDialog(language: ke.tahadhari.domain.Language, onDismiss: () ->
     val strings = Strings.of(language)
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(strings.aboutTitle, modifier = Modifier.semantics { heading() }) },
+        title = { Text(strings.aboutPage.aboutTitle, modifier = Modifier.semantics { heading() }) },
         text = {
             Box(Modifier.widthIn(max = 720.dp).heightIn(max = 640.dp).verticalScroll(rememberScrollState())) {
                 AboutContent(language)
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(strings.aboutBack) } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(strings.aboutPage.aboutBack) } },
         modifier = Modifier.widthIn(max = 760.dp),
     )
 }

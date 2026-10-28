@@ -156,38 +156,6 @@ data class Strings(
     val widgetLandslide: (mm: Int) -> String,
     val widgetSavedOn: (isoDate: String) -> String,
     val widgetNoDataBody: String,
-    // --- About page, first-launch intro, refresh ---
-    val aboutOpen: String,
-    val aboutTitle: String,
-    val aboutBack: String,
-    val aboutWhatTitle: String,
-    val aboutWhatBody: String,
-    val aboutRiskTitle: String,
-    val aboutRiskBody: String,
-    val aboutSignalColumn: String,
-    val aboutSignalDay: String,
-    val aboutSignalThreeDay: String,
-    val aboutSignalRiver: String,
-    val aboutRiskRule: String,
-    val aboutRiskHeuristic: String,
-    val aboutDataTitle: String,
-    val aboutDataWeather: String,
-    val aboutDataRiver: String,
-    val aboutDataBoundaries: String,
-    val aboutDataGuides: String,
-    val aboutAiTitle: String,
-    val aboutAiBody: String,
-    val aboutAiOffline: String,
-    val aboutPrivacyTitle: String,
-    val aboutPrivacyNoAccounts: String,
-    val aboutPrivacyStored: String,
-    val aboutPrivacyLocation: String,
-    val aboutPrivacySent: String,
-    val aboutPrivacyCheckIn: String,
-    val aboutDisclaimerTitle: String,
-    val aboutVersion: (version: String) -> String,
-    val aboutLicence: String,
-    val aboutContest: String,
     val onboardWhatTitle: String,
     val onboardWhatBody: String,
     val onboardGuidanceTitle: String,
@@ -231,6 +199,10 @@ data class Strings(
     val trendFellDescription: (from: String) -> String,
     val briefingRisingLine: (names: String) -> String,
     val reasonLandslide: (mm: Int, startDay: String) -> String,
+    val reasonSaturated: String,
+    /** "Chance of a day over 50 mm this week: 12 of 51 forecast runs (24%)" */
+    val heavyRainChance: (mm: Int, over: Int, total: Int, percent: Int) -> String,
+    val heavyRainChanceSource: String,
     // --- Phone extras: share alert, rising-risk notification, local crash report ---
     val shareAlert: String,
     val shareMsgRainDay: (mm: Int, day: String) -> String,
@@ -251,8 +223,6 @@ data class Strings(
     val crashBody: String,
     val crashShare: String,
     val crashDelete: String,
-    val aboutPrivacyCrash: String,
-    val aboutPrivacyNotify: String,
     val riskAlertsOn: String,
     val riskAlertsOff: String,
     // --- Read aloud ---
@@ -269,7 +239,8 @@ data class Strings(
     val pointUse: String,
     val pointBackToHq: (county: String) -> String,
     val pointTooFar: (county: String) -> String,
-    val aboutPrivacyPoint: String,
+    // About page / About dialog texts, grouped so the Strings constructor stays under the JVM's 255-parameter limit.
+    val aboutPage: AboutStrings,
 ) {
     companion object {
         val english = Strings(
@@ -439,45 +410,6 @@ data class Strings(
             widgetLandslide = { mm -> "Landslide risk: $mm mm in 3 days" },
             widgetSavedOn = { "Saved forecast from ${Dates.shortDate(it, Language.ENGLISH)}" },
             widgetNoDataBody = "Couldn't load the forecast",
-            aboutOpen = "About Tahadhari",
-            aboutTitle = "About and how it works",
-            aboutBack = "Back",
-            aboutWhatTitle = "What Tahadhari does",
-            aboutWhatBody = "Tahadhari turns open rainfall and river forecasts into plain flood alerts for Kenya's " +
-                "47 counties. Pick your county to see the next 7 days, why the risk is what it is, and what to do.",
-            aboutRiskTitle = "How risk is calculated",
-            aboutRiskBody = "The app checks three signals in the forecast. A level is reached when a signal passes its number.",
-            aboutSignalColumn = "Signal",
-            aboutSignalDay = "Wettest single day (mm)",
-            aboutSignalThreeDay = "Wettest 3 days in a row (mm)",
-            aboutSignalRiver = "River peak compared with its recent average (times)",
-            aboutRiskRule = "The highest level of the three signals is the risk level you see.",
-            aboutRiskHeuristic = "These numbers are our own rules of thumb. They are not official Kenya Meteorological " +
-                "Service (KMSA) criteria.",
-            aboutDataTitle = "Where the data comes from",
-            aboutDataWeather = "Rainfall forecasts: Open-Meteo.com (CC BY 4.0).",
-            aboutDataRiver = "River forecasts: Open-Meteo Flood API, based on GloFAS (CC BY 4.0).",
-            aboutDataBoundaries = "County boundaries: geoBoundaries gbOpen, Kenya ADM1 (RCMRD), public domain.",
-            aboutDataGuides = "Safety guides: Kenya Red Cross, Kenya Ministry of Health, WHO, USGS and the US National Weather Service.",
-            aboutAiTitle = "AI explanations",
-            aboutAiBody = "The AI only rewrites facts the app has already worked out. It never changes the risk level.",
-            aboutAiOffline = "If the AI server is off, slow or unreachable, the app writes the text itself, " +
-                "without internet. It is labelled \"Offline explanation\".",
-            aboutPrivacyTitle = "Privacy",
-            aboutPrivacyNoAccounts = "No accounts, no ads and no tracking.",
-            aboutPrivacyStored = "Your county, your language and the last forecast are saved only on this phone.",
-            aboutPrivacyLocation = "Your location is used once, on this phone, only when you tap \"Use my location\". " +
-                "It is used to find the nearest county. It is not saved and not sent anywhere.",
-            aboutPrivacySent = "To get a forecast, the app sends the coordinates of your county's main town " +
-                "(and a river point) to Open-Meteo. If an AI server is set up, the app also sends it the county name, " +
-                "town, risk level, rain and river numbers and flood-prone place names, and the server passes them " +
-                "to the AI service. Like any internet request, these servers can see your IP address.",
-            aboutPrivacyCheckIn = "\"I'm safe\" and \"I need help\" messages go only through your phone's own share " +
-                "sheet. You choose the app and the people. Tahadhari does not send them.",
-            aboutDisclaimerTitle = "Important",
-            aboutVersion = { v -> "Version $v" },
-            aboutLicence = "Open source, MIT licence.",
-            aboutContest = "Made for the Kotlin Multiplatform Contest 2026",
             onboardWhatTitle = "Know your flood risk",
             onboardWhatBody = "Tahadhari turns rainfall and river forecasts into plain alerts for your county, " +
                 "and tells you what to do.",
@@ -520,6 +452,9 @@ data class Strings(
             trendFellDescription = { "Risk fell since yesterday, was $it" },
             briefingRisingLine = { "Rising since yesterday: $it" },
             reasonLandslide = { mm, d -> "$mm mm over 3 days from $d: landslide risk on steep slopes" },
+            reasonSaturated = "The ground is already very wet, so rain runs off fast",
+            heavyRainChance = { mm, n, t, p -> "Chance of a day over $mm mm this week: $n of $t forecast runs ($p%)" },
+            heavyRainChanceSource = "Source: ECMWF ensemble forecast via Open-Meteo. For information only; it does not change the risk level.",
             shareAlert = "Share alert",
             shareMsgRainDay = { mm, d -> "Up to $mm mm of rain on $d" },
             shareMsgRainSpell = { mm, d -> "About $mm mm of rain over 3 days from $d" },
@@ -538,10 +473,6 @@ data class Strings(
             crashBody = "Share the report to help fix it? It stays on your phone unless you share it.",
             crashShare = "Share report",
             crashDelete = "Delete",
-            aboutPrivacyCrash = "If the app crashes, a short report (time, app version, phone model, error) is saved " +
-                "on this phone. It stays there unless you choose to share it. Nothing is sent automatically.",
-            aboutPrivacyNotify = "Optional risk notifications are worked out on this phone from the same forecast. " +
-                "No account, token or extra data is sent for them.",
             riskAlertsOn = "On",
             riskAlertsOff = "Off",
             readAloud = "Read aloud",
@@ -556,8 +487,55 @@ data class Strings(
             pointUse = "Use my exact location",
             pointBackToHq = { n -> "Back to $n HQ forecast" },
             pointTooFar = { n -> "Your location is outside $n County or too far from its main town, so the county forecast is shown." },
-            aboutPrivacyPoint = "If you choose \"Use my exact location\" on a forecast, your location is rounded to about 1 km " +
-                "and those rounded coordinates are sent to Open-Meteo instead of the county town's. They are kept only while you view that forecast.",
+            aboutPage = AboutStrings(
+                aboutOpen = "About Tahadhari",
+                aboutTitle = "About and how it works",
+                aboutBack = "Back",
+                aboutWhatTitle = "What Tahadhari does",
+                aboutWhatBody = "Tahadhari turns open rainfall and river forecasts into plain flood alerts for Kenya's " +
+                    "47 counties. Pick your county to see the next 7 days, why the risk is what it is, and what to do.",
+                aboutRiskTitle = "How risk is calculated",
+                aboutRiskBody = "The app checks three signals in the forecast. A level is reached when a signal passes its number.",
+                aboutSignalColumn = "Signal",
+                aboutSignalDay = "Wettest single day (mm)",
+                aboutSignalThreeDay = "Wettest 3 days in a row (mm)",
+                aboutSignalRiver = "River peak compared with its recent average (times)",
+                aboutRiskRule = "The highest level of the three signals is the risk level you see.",
+                aboutRiskHeuristic = "These numbers are our own rules of thumb. They are not official Kenya Meteorological " +
+                    "Service (KMSA) criteria.",
+                aboutDataTitle = "Where the data comes from",
+                aboutDataWeather = "Rainfall forecasts: Open-Meteo.com (CC BY 4.0).",
+                aboutDataRiver = "River forecasts: Open-Meteo Flood API, based on GloFAS (CC BY 4.0).",
+                aboutDataBoundaries = "County boundaries: geoBoundaries gbOpen, Kenya ADM1 (RCMRD), public domain.",
+                aboutDataGuides = "Safety guides: Kenya Red Cross, Kenya Ministry of Health, WHO, USGS and the US National Weather Service.",
+                aboutAiTitle = "AI explanations",
+                aboutAiBody = "The AI only rewrites facts the app has already worked out. It never changes the risk level.",
+                aboutAiOffline = "If the AI server is off, slow or unreachable, the app writes the text itself, " +
+                    "without internet. It is labelled \"Offline explanation\".",
+                aboutPrivacyTitle = "Privacy",
+                aboutPrivacyNoAccounts = "No accounts, no ads and no tracking.",
+                aboutPrivacyStored = "Your county, your language and the last forecast are saved only on this phone.",
+                aboutPrivacyLocation = "Your location is used once, on this phone, only when you tap \"Use my location\". " +
+                    "It is used to find the nearest county. It is not saved and not sent anywhere.",
+                aboutPrivacySent = "To get a forecast, the app sends the coordinates of your county's main town " +
+                    "(and a river point) to Open-Meteo. If an AI server is set up, the app also sends it the county name, " +
+                    "town, risk level, rain and river numbers and flood-prone place names, and the server passes them " +
+                    "to the AI service. Like any internet request, these servers can see your IP address.",
+                aboutPrivacyCheckIn = "\"I'm safe\" and \"I need help\" messages go only through your phone's own share " +
+                    "sheet. You choose the app and the people. Tahadhari does not send them.",
+                aboutDisclaimerTitle = "Important",
+                aboutVersion = { v -> "Version $v" },
+                aboutLicence = "Open source, MIT licence.",
+                aboutContest = "Made for the Kotlin Multiplatform Contest 2026",
+                aboutSignalWetGround = "Very wet ground (already soaked) raises a Moderate level to High, never higher.",
+                aboutDataEnsemble = "Chance of heavy rain: ECMWF IFS ensemble via the Open-Meteo Ensemble API (CC BY 4.0).",
+                aboutPrivacyCrash = "If the app crashes, a short report (time, app version, phone model, error) is saved " +
+                    "on this phone. It stays there unless you choose to share it. Nothing is sent automatically.",
+                aboutPrivacyNotify = "Optional risk notifications are worked out on this phone from the same forecast. " +
+                    "No account, token or extra data is sent for them.",
+                aboutPrivacyPoint = "If you choose \"Use my exact location\" on a forecast, your location is rounded to about 1 km " +
+                    "and those rounded coordinates are sent to Open-Meteo instead of the county town's. They are kept only while you view that forecast.",
+            ),
         )
 
         val swahili = Strings(
@@ -741,45 +719,6 @@ data class Strings(
             widgetLandslide = { mm -> "Hatari ya maporomoko: mm $mm kwa siku 3" }, // TODO(review)
             widgetSavedOn = { "Utabiri uliohifadhiwa wa ${Dates.shortDate(it, Language.SWAHILI)}" },
             widgetNoDataBody = "Imeshindwa kupakia utabiri",
-            // TODO(review): About and intro Swahili below needs a fluent speaker's check.
-            aboutOpen = "Kuhusu Tahadhari",
-            aboutTitle = "Kuhusu na jinsi inavyofanya kazi",
-            aboutBack = "Rudi",
-            aboutWhatTitle = "Tahadhari hufanya nini",
-            aboutWhatBody = "Tahadhari hugeuza utabiri wa wazi wa mvua na mito kuwa tahadhari rahisi za mafuriko kwa " +
-                "kaunti 47 za Kenya. Chagua kaunti yako uone siku 7 zijazo, kwa nini hatari ni hiyo, na unachopaswa kufanya.",
-            aboutRiskTitle = "Hatari hukokotolewaje",
-            aboutRiskBody = "Programu huangalia ishara tatu kwenye utabiri. Kiwango hufikiwa ishara inapovuka namba yake.",
-            aboutSignalColumn = "Ishara",
-            aboutSignalDay = "Siku moja yenye mvua nyingi zaidi (mm)",
-            aboutSignalThreeDay = "Siku 3 mfululizo zenye mvua nyingi zaidi (mm)",
-            aboutSignalRiver = "Kilele cha mto ikilinganishwa na wastani wake wa hivi karibuni (mara)",
-            aboutRiskRule = "Kiwango cha juu zaidi kati ya ishara tatu ndicho kiwango cha hatari unachokiona.",
-            aboutRiskHeuristic = "Namba hizi ni kanuni zetu wenyewe. Si vigezo rasmi vya Idara ya Hali ya Hewa Kenya (KMSA).",
-            aboutDataTitle = "Data inatoka wapi",
-            aboutDataWeather = "Utabiri wa mvua: Open-Meteo.com (CC BY 4.0).",
-            aboutDataRiver = "Utabiri wa mito: Open-Meteo Flood API, kulingana na GloFAS (CC BY 4.0).",
-            aboutDataBoundaries = "Mipaka ya kaunti: geoBoundaries gbOpen, Kenya ADM1 (RCMRD), kikoa cha umma.",
-            aboutDataGuides = "Miongozo ya usalama: Msalaba Mwekundu wa Kenya, Wizara ya Afya ya Kenya, WHO, USGS na Huduma ya Hali ya Hewa ya Marekani.",
-            aboutAiTitle = "Maelezo ya AI",
-            aboutAiBody = "AI huandika upya tu ukweli ambao programu imeshahesabu. Haibadilishi kamwe kiwango cha hatari.",
-            aboutAiOffline = "Seva ya AI ikiwa imezimwa, polepole au haipatikani, programu huandika maelezo yenyewe, " +
-                "bila mtandao. Huitwa \"Maelezo ya nje ya mtandao\".",
-            aboutPrivacyTitle = "Faragha",
-            aboutPrivacyNoAccounts = "Hakuna akaunti, matangazo wala ufuatiliaji.",
-            aboutPrivacyStored = "Kaunti yako, lugha yako na utabiri wa mwisho huhifadhiwa kwenye simu hii pekee.",
-            aboutPrivacyLocation = "Mahali ulipo hutumiwa mara moja, kwenye simu hii, unapogusa \"Tumia mahali nilipo\" tu. " +
-                "Hutumika kupata kaunti iliyo karibu zaidi. Hapahifadhiwi wala kutumwa popote.",
-            aboutPrivacySent = "Ili kupata utabiri, programu hutuma viwianishi vya mji mkuu wa kaunti yako " +
-                "(na eneo la mto) kwa Open-Meteo. Seva ya AI ikiwekwa, programu pia huitumia jina la kaunti, mji, " +
-                "kiwango cha hatari, namba za mvua na mto na majina ya maeneo hatari ya mafuriko, kisha seva huzipeleka " +
-                "kwa huduma ya AI. Kama ombi lolote la mtandao, seva hizi zinaweza kuona anwani yako ya IP.",
-            aboutPrivacyCheckIn = "Ujumbe wa \"Niko salama\" na \"Nahitaji msaada\" hupita kwenye orodha ya kutuma " +
-                "ya simu yako pekee. Wewe huchagua programu na watu. Tahadhari haiutumi.",
-            aboutDisclaimerTitle = "Muhimu",
-            aboutVersion = { v -> "Toleo $v" },
-            aboutLicence = "Chanzo huria, leseni ya MIT.",
-            aboutContest = "Imetengenezwa kwa Kotlin Multiplatform Contest 2026",
             onboardWhatTitle = "Jua hatari ya mafuriko kwako",
             onboardWhatBody = "Tahadhari hugeuza utabiri wa mvua na mito kuwa tahadhari rahisi kwa kaunti yako, " +
                 "na kukuambia unachopaswa kufanya.",
@@ -822,6 +761,10 @@ data class Strings(
             trendRoseDescription = { "Hatari imepanda tangu jana, ilikuwa $it" },
             trendFellDescription = { "Hatari imeshuka tangu jana, ilikuwa $it" },
             briefingRisingLine = { "Imepanda tangu jana: $it" },
+            // TODO(review): Swahili for the wet-ground and ensemble lines needs a fluent speaker's check.
+            reasonSaturated = "Ardhi tayari imeloa sana, kwa hiyo maji ya mvua hutiririka haraka",
+            heavyRainChance = { mm, n, t, p -> "Uwezekano wa siku yenye mvua zaidi ya milimita $mm wiki hii: $n kati ya $t za utabiri ($p%)" },
+            heavyRainChanceSource = "Chanzo: utabiri wa ECMWF (ensemble) kupitia Open-Meteo. Ni taarifa tu; haubadilishi kiwango cha hatari.",
             reasonLandslide = { mm, d -> "Milimita $mm kwa siku 3 kuanzia $d: hatari ya maporomoko ya ardhi kwenye miteremko mikali" },
             shareAlert = "Shiriki tahadhari",
             shareMsgRainDay = { mm, d -> "Mvua ya hadi milimita $mm siku ya $d" },
@@ -841,10 +784,6 @@ data class Strings(
             crashBody = "Shiriki ripoti ili kusaidia kurekebisha? Inabaki kwenye simu yako isipokuwa ukiishiriki.",
             crashShare = "Shiriki ripoti",
             crashDelete = "Futa",
-            aboutPrivacyCrash = "Programu ikiacha kufanya kazi, ripoti fupi (saa, toleo la programu, aina ya simu, hitilafu) " +
-                "huhifadhiwa kwenye simu hii. Hubaki hapo isipokuwa uchague kuishiriki. Hakuna kinachotumwa kiotomatiki.",
-            aboutPrivacyNotify = "Arifa za hatari (si za lazima) hukokotwa kwenye simu hii kutokana na utabiri uleule. " +
-                "Hakuna akaunti, tokeni wala data ya ziada inayotumwa kwa ajili yake.",
             riskAlertsOn = "Imewashwa",
             riskAlertsOff = "Imezimwa",
             readAloud = "Soma kwa sauti", // TODO(review)
@@ -858,9 +797,56 @@ data class Strings(
             pointRounded = "Mahali ulipo hukadiriwa hadi umbali wa kilomita 1 hivi kabla ya kuomba utabiri. Hapahifadhiwi.", // TODO(review)
             pointUse = "Tumia mahali nilipo hasa", // TODO(review)
             pointBackToHq = { n -> "Rudi kwenye utabiri wa makao makuu ya $n" }, // TODO(review)
-            pointTooFar = { n -> "Mahali ulipo ni nje ya Kaunti ya $n au mbali sana na mji wake mkuu, kwa hiyo utabiri wa kaunti unaonyeshwa." }, // TODO(review)
-            aboutPrivacyPoint = "Ukichagua \"Tumia mahali nilipo hasa\" kwenye utabiri, mahali ulipo hukadiriwa hadi kilomita 1 hivi, " +
-                "na viwianishi hivyo vilivyokadiriwa hutumwa kwa Open-Meteo badala ya vya mji wa kaunti. Hutunzwa tu unapotazama utabiri huo.", // TODO(review)
+            pointTooFar = { n -> "Mahali ulipo ni nje ya Kaunti ya $n au mbali sana na mji wake mkuu, kwa hiyo utabiri wa kaunti unaonyeshwa." },
+            aboutPage = AboutStrings(
+                // TODO(review): About and intro Swahili below needs a fluent speaker's check.
+                aboutOpen = "Kuhusu Tahadhari",
+                aboutTitle = "Kuhusu na jinsi inavyofanya kazi",
+                aboutBack = "Rudi",
+                aboutWhatTitle = "Tahadhari hufanya nini",
+                aboutWhatBody = "Tahadhari hugeuza utabiri wa wazi wa mvua na mito kuwa tahadhari rahisi za mafuriko kwa " +
+                    "kaunti 47 za Kenya. Chagua kaunti yako uone siku 7 zijazo, kwa nini hatari ni hiyo, na unachopaswa kufanya.",
+                aboutRiskTitle = "Hatari hukokotolewaje",
+                aboutRiskBody = "Programu huangalia ishara tatu kwenye utabiri. Kiwango hufikiwa ishara inapovuka namba yake.",
+                aboutSignalColumn = "Ishara",
+                aboutSignalDay = "Siku moja yenye mvua nyingi zaidi (mm)",
+                aboutSignalThreeDay = "Siku 3 mfululizo zenye mvua nyingi zaidi (mm)",
+                aboutSignalRiver = "Kilele cha mto ikilinganishwa na wastani wake wa hivi karibuni (mara)",
+                aboutRiskRule = "Kiwango cha juu zaidi kati ya ishara tatu ndicho kiwango cha hatari unachokiona.",
+                aboutRiskHeuristic = "Namba hizi ni kanuni zetu wenyewe. Si vigezo rasmi vya Idara ya Hali ya Hewa Kenya (KMSA).",
+                aboutDataTitle = "Data inatoka wapi",
+                aboutDataWeather = "Utabiri wa mvua: Open-Meteo.com (CC BY 4.0).",
+                aboutDataRiver = "Utabiri wa mito: Open-Meteo Flood API, kulingana na GloFAS (CC BY 4.0).",
+                aboutDataBoundaries = "Mipaka ya kaunti: geoBoundaries gbOpen, Kenya ADM1 (RCMRD), kikoa cha umma.",
+                aboutDataGuides = "Miongozo ya usalama: Msalaba Mwekundu wa Kenya, Wizara ya Afya ya Kenya, WHO, USGS na Huduma ya Hali ya Hewa ya Marekani.",
+                aboutAiTitle = "Maelezo ya AI",
+                aboutAiBody = "AI huandika upya tu ukweli ambao programu imeshahesabu. Haibadilishi kamwe kiwango cha hatari.",
+                aboutAiOffline = "Seva ya AI ikiwa imezimwa, polepole au haipatikani, programu huandika maelezo yenyewe, " +
+                    "bila mtandao. Huitwa \"Maelezo ya nje ya mtandao\".",
+                aboutPrivacyTitle = "Faragha",
+                aboutPrivacyNoAccounts = "Hakuna akaunti, matangazo wala ufuatiliaji.",
+                aboutPrivacyStored = "Kaunti yako, lugha yako na utabiri wa mwisho huhifadhiwa kwenye simu hii pekee.",
+                aboutPrivacyLocation = "Mahali ulipo hutumiwa mara moja, kwenye simu hii, unapogusa \"Tumia mahali nilipo\" tu. " +
+                    "Hutumika kupata kaunti iliyo karibu zaidi. Hapahifadhiwi wala kutumwa popote.",
+                aboutPrivacySent = "Ili kupata utabiri, programu hutuma viwianishi vya mji mkuu wa kaunti yako " +
+                    "(na eneo la mto) kwa Open-Meteo. Seva ya AI ikiwekwa, programu pia huitumia jina la kaunti, mji, " +
+                    "kiwango cha hatari, namba za mvua na mto na majina ya maeneo hatari ya mafuriko, kisha seva huzipeleka " +
+                    "kwa huduma ya AI. Kama ombi lolote la mtandao, seva hizi zinaweza kuona anwani yako ya IP.",
+                aboutPrivacyCheckIn = "Ujumbe wa \"Niko salama\" na \"Nahitaji msaada\" hupita kwenye orodha ya kutuma " +
+                    "ya simu yako pekee. Wewe huchagua programu na watu. Tahadhari haiutumi.",
+                aboutDisclaimerTitle = "Muhimu",
+                aboutVersion = { v -> "Toleo $v" },
+                aboutLicence = "Chanzo huria, leseni ya MIT.",
+                aboutContest = "Imetengenezwa kwa Kotlin Multiplatform Contest 2026",
+                aboutSignalWetGround = "Ardhi iliyoloa sana huinua kiwango cha Wastani hadi Juu, si zaidi.",
+                aboutDataEnsemble = "Uwezekano wa mvua kubwa: ECMWF IFS ensemble kupitia Open-Meteo Ensemble API (CC BY 4.0).",
+                aboutPrivacyCrash = "Programu ikiacha kufanya kazi, ripoti fupi (saa, toleo la programu, aina ya simu, hitilafu) " +
+                    "huhifadhiwa kwenye simu hii. Hubaki hapo isipokuwa uchague kuishiriki. Hakuna kinachotumwa kiotomatiki.",
+                aboutPrivacyNotify = "Arifa za hatari (si za lazima) hukokotwa kwenye simu hii kutokana na utabiri uleule. " +
+                    "Hakuna akaunti, tokeni wala data ya ziada inayotumwa kwa ajili yake.",     // TODO(review)
+                aboutPrivacyPoint = "Ukichagua \"Tumia mahali nilipo hasa\" kwenye utabiri, mahali ulipo hukadiriwa hadi kilomita 1 hivi, " +
+                    "na viwianishi hivyo vilivyokadiriwa hutumwa kwa Open-Meteo badala ya vya mji wa kaunti. Hutunzwa tu unapotazama utabiri huo.",
+            ), // TODO(review)
         )
 
         fun of(language: Language) = if (language == Language.SWAHILI) swahili else english
@@ -875,3 +861,44 @@ fun Strings.updatedText(updatedAtMillis: Long, nowMillis: Long): String =
         is DataAge.Hours -> updatedHoursAgo(age.hours)
         is DataAge.OnDate -> updatedOn(age.isoDate)
     }
+
+/** About texts in one language (see [Strings.aboutPage]). */
+data class AboutStrings(
+    // --- About page ---
+    val aboutOpen: String,
+    val aboutTitle: String,
+    val aboutBack: String,
+    val aboutWhatTitle: String,
+    val aboutWhatBody: String,
+    val aboutRiskTitle: String,
+    val aboutRiskBody: String,
+    val aboutSignalColumn: String,
+    val aboutSignalDay: String,
+    val aboutSignalThreeDay: String,
+    val aboutSignalRiver: String,
+    val aboutRiskRule: String,
+    val aboutRiskHeuristic: String,
+    val aboutDataTitle: String,
+    val aboutDataWeather: String,
+    val aboutDataRiver: String,
+    val aboutDataBoundaries: String,
+    val aboutDataGuides: String,
+    val aboutAiTitle: String,
+    val aboutAiBody: String,
+    val aboutAiOffline: String,
+    val aboutPrivacyTitle: String,
+    val aboutPrivacyNoAccounts: String,
+    val aboutPrivacyStored: String,
+    val aboutPrivacyLocation: String,
+    val aboutPrivacySent: String,
+    val aboutPrivacyCheckIn: String,
+    val aboutDisclaimerTitle: String,
+    val aboutVersion: (version: String) -> String,
+    val aboutLicence: String,
+    val aboutContest: String,
+    val aboutSignalWetGround: String,
+    val aboutDataEnsemble: String,
+    val aboutPrivacyCrash: String,
+    val aboutPrivacyNotify: String,
+    val aboutPrivacyPoint: String,
+)

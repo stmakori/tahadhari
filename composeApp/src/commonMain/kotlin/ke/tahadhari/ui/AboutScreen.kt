@@ -29,32 +29,33 @@ fun AboutContent(language: Language, modifier: Modifier = Modifier) {
     val strings = Strings.of(language)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.lg)) {
         SectionCard {
-            SectionTitle(AppIcons.Drop, strings.aboutWhatTitle)
-            BodyText(strings.aboutWhatBody)
+            SectionTitle(AppIcons.Drop, strings.aboutPage.aboutWhatTitle)
+            BodyText(strings.aboutPage.aboutWhatBody)
         }
         RiskTableCard(strings)
         SectionCard {
-            SectionTitle(AppIcons.Map, strings.aboutDataTitle)
-            Bullet(strings.aboutDataWeather)
-            Bullet(strings.aboutDataRiver)
-            Bullet(strings.aboutDataBoundaries)
-            Bullet(strings.aboutDataGuides)
+            SectionTitle(AppIcons.Map, strings.aboutPage.aboutDataTitle)
+            Bullet(strings.aboutPage.aboutDataWeather)
+            Bullet(strings.aboutPage.aboutDataRiver)
+            Bullet(strings.aboutPage.aboutDataEnsemble)
+            Bullet(strings.aboutPage.aboutDataBoundaries)
+            Bullet(strings.aboutPage.aboutDataGuides)
         }
         SectionCard {
-            SectionTitle(AppIcons.Sparkle, strings.aboutAiTitle)
-            BodyText(strings.aboutAiBody)
-            BodyText(strings.aboutAiOffline)
+            SectionTitle(AppIcons.Sparkle, strings.aboutPage.aboutAiTitle)
+            BodyText(strings.aboutPage.aboutAiBody)
+            BodyText(strings.aboutPage.aboutAiOffline)
         }
         SectionCard {
-            SectionTitle(AppIcons.Shield, strings.aboutPrivacyTitle)
-            Bullet(strings.aboutPrivacyNoAccounts)
-            Bullet(strings.aboutPrivacyStored)
-            Bullet(strings.aboutPrivacyLocation)
-            Bullet(strings.aboutPrivacyPoint)
-            Bullet(strings.aboutPrivacySent)
-            Bullet(strings.aboutPrivacyCheckIn)
-            Bullet(strings.aboutPrivacyCrash)
-            Bullet(strings.aboutPrivacyNotify)
+            SectionTitle(AppIcons.Shield, strings.aboutPage.aboutPrivacyTitle)
+            Bullet(strings.aboutPage.aboutPrivacyNoAccounts)
+            Bullet(strings.aboutPage.aboutPrivacyStored)
+            Bullet(strings.aboutPage.aboutPrivacyLocation)
+            Bullet(strings.aboutPage.aboutPrivacyPoint)
+            Bullet(strings.aboutPage.aboutPrivacySent)
+            Bullet(strings.aboutPage.aboutPrivacyCheckIn)
+            Bullet(strings.aboutPage.aboutPrivacyCrash)
+            Bullet(strings.aboutPage.aboutPrivacyNotify)
         }
         Disclaimer(strings)
         Column(
@@ -64,9 +65,9 @@ fun AboutContent(language: Language, modifier: Modifier = Modifier) {
         ) {
             val style = MaterialTheme.typography.bodySmall
             val color = MaterialTheme.colorScheme.onSurfaceVariant
-            Text(strings.appName + " · " + strings.aboutVersion(APP_VERSION), style = MaterialTheme.typography.labelLarge, color = color, textAlign = TextAlign.Center)
-            Text(strings.aboutLicence, style = style, color = color, textAlign = TextAlign.Center)
-            Text(strings.aboutContest, style = style, color = color, textAlign = TextAlign.Center)
+            Text(strings.appName + " · " + strings.aboutPage.aboutVersion(APP_VERSION), style = MaterialTheme.typography.labelLarge, color = color, textAlign = TextAlign.Center)
+            Text(strings.aboutPage.aboutLicence, style = style, color = color, textAlign = TextAlign.Center)
+            Text(strings.aboutPage.aboutContest, style = style, color = color, textAlign = TextAlign.Center)
         }
     }
 }
@@ -93,11 +94,11 @@ private fun RiskTableCard(strings: Strings, thresholds: RiskThresholds = RiskThr
     val levels = listOf(RiskLevel.MODERATE, RiskLevel.HIGH, RiskLevel.SEVERE)
     val none = "–" // the river signal starts at High
     SectionCard {
-        SectionTitle(AppIcons.Waves, strings.aboutRiskTitle)
-        BodyText(strings.aboutRiskBody)
+        SectionTitle(AppIcons.Waves, strings.aboutPage.aboutRiskTitle)
+        BodyText(strings.aboutPage.aboutRiskBody)
         Column {
             Row(Modifier.fillMaxWidth().padding(bottom = Spacing.sm), verticalAlignment = Alignment.Bottom) {
-                Text(strings.aboutSignalColumn, Modifier.weight(SIGNAL_WEIGHT), style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant)
+                Text(strings.aboutPage.aboutSignalColumn, Modifier.weight(SIGNAL_WEIGHT), style = MaterialTheme.typography.labelLarge, color = scheme.onSurfaceVariant)
                 levels.forEach { level ->
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         RiskMark(level, Modifier.size(16.dp))
@@ -106,20 +107,20 @@ private fun RiskTableCard(strings: Strings, thresholds: RiskThresholds = RiskThr
                 }
             }
             TableRow(
-                strings.aboutSignalDay,
+                strings.aboutPage.aboutSignalDay,
                 listOf(thresholds.dailyModerateMm, thresholds.dailyHighMm, thresholds.dailySevereMm).map { "≥ ${it.clean()}" },
             )
             TableRow(
-                strings.aboutSignalThreeDay,
+                strings.aboutPage.aboutSignalThreeDay,
                 listOf(thresholds.threeDayModerateMm, thresholds.threeDayHighMm, thresholds.threeDaySevereMm).map { "≥ ${it.clean()}" },
             )
             TableRow(
-                strings.aboutSignalRiver,
+                strings.aboutPage.aboutSignalRiver,
                 listOf(none, "≥ ${thresholds.riverHighRatio.clean()}×", "≥ ${thresholds.riverSevereRatio.clean()}×"),
             )
         }
-        BodyText(strings.aboutRiskRule)
-        Text(strings.aboutRiskHeuristic, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
+        BodyText(strings.aboutPage.aboutRiskRule)
+        Text(strings.aboutPage.aboutRiskHeuristic, style = MaterialTheme.typography.bodyMedium, color = scheme.onSurfaceVariant)
     }
 }
 

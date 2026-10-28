@@ -25,6 +25,8 @@ data class CachedForecast(
      */
     val pointLatitude: Double? = null,
     val pointLongitude: Double? = null,
+    /** Soil moisture 9-27 cm (m³/m³) at [fetchedAtMillis]; null when the API gave none. */
+    val soilMoistureM3m3: Double? = null,
     val version: Int = CURRENT_VERSION,
 ) {
     val point: GeoPoint? get() = if (pointLatitude != null && pointLongitude != null) GeoPoint(pointLatitude, pointLongitude) else null

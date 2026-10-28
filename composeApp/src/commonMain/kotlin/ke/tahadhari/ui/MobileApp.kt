@@ -141,7 +141,7 @@ fun MobileApp(
                         else AppMark(Modifier.padding(horizontal = Spacing.md).size(36.dp))
                     },
                     actions = {
-                        IconButton(onClick = { showAbout = true }) { Icon(AppIcons.Info, strings.aboutOpen) }
+                        IconButton(onClick = { showAbout = true }) { Icon(AppIcons.Info, strings.aboutPage.aboutOpen) }
                         LanguageToggle(language, ::selectLanguage, Modifier.padding(end = Spacing.sm))
                     },
                 )

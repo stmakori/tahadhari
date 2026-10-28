@@ -27,13 +27,13 @@ internal fun AboutPage(
             TopAppBar(
                 title = {
                     Text(
-                        strings.aboutTitle,
+                        strings.aboutPage.aboutTitle,
                         style = MaterialTheme.typography.titleLarge,
                         maxLines = 2,
                         modifier = Modifier.semantics { heading() },
                     )
                 },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(AppIcons.ArrowBack, strings.aboutBack) } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(AppIcons.ArrowBack, strings.aboutPage.aboutBack) } },
                 actions = { LanguageToggle(language, onLanguage, Modifier.padding(end = Spacing.sm)) },
             )
         },

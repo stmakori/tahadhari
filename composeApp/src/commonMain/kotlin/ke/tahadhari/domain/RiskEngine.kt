@@ -8,6 +8,11 @@ sealed interface RiskReason {
     data class WetSpell(val startDate: String, val totalMm: Double, override val level: RiskLevel) : RiskReason
     /** Heavy 3-day rain in a landslide-prone county ([ke.tahadhari.data.County.landslideProne]). */
     data class LandslideRisk(val startDate: String, val totalMm: Double, override val level: RiskLevel) : RiskReason
+    /**
+     * The ground is already very wet (soil moisture at 9-27 cm), so rain runs off instead of soaking in.
+     * Raises a rainfall-based Moderate by one step, capped at High. [level] is the level it leads to.
+     */
+    data class SaturatedGround(val soilMoisture: Double, override val level: RiskLevel) : RiskReason
     data class RiverRising(val riverName: String?, val ratio: Double, override val level: RiskLevel) : RiskReason
 }
 
@@ -40,6 +45,13 @@ data class RiskThresholds(
     /** Wettest 3-day total at which a landslide-prone county is at least High / Severe. */
     val landslideHighMm: Double = 50.0,
     val landslideSevereMm: Double = 100.0,
+    /**
+     * Soil moisture (m³/m³, 9-27 cm layer) at or above which the ground counts as saturated. null (the
+     * default) disables the signal: the back-test did not support it (it roughly doubled High+ county-days,
+     * 7.5% to 14.8% at 0.40, for about 2 more event hits, and the value does not transfer between soil
+     * datasets). See docs/validation.md section 8. The soil moisture fetch and the rule stay in the code.
+     */
+    val soilSaturatedM3m3: Double? = null,
 )
 
 class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
@@ -64,6 +76,9 @@ class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
                 ?.let { reasons += RiskReason.WetSpell(start, bestTotal, it) }
         }
 
+        // Rainfall-based level only (heavy day / wet spell); river and landslide don't count for saturation.
+        val rainLevel = reasons.maxOfOrNull { it.level }
+
         if (forecast.county.landslideProne) {
             val level = when {
                 bestTotal >= t.landslideSevereMm -> RiskLevel.SEVERE
@@ -81,6 +96,15 @@ class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
                 else -> null
             }
             level?.let { reasons += RiskReason.RiverRising(river.riverName, river.riseRatio, it) }
+        }
+
+        // Saturated ground: one step up, capped at High. Never raises Low, never lowers or creates Severe.
+        val soil = forecast.soilMoistureM3m3
+        val soilLimit = t.soilSaturatedM3m3
+        if (soil != null && soilLimit != null && soil >= soilLimit && rainLevel != null && rainLevel >= RiskLevel.MODERATE) {
+            val current = reasons.maxOf { it.level }
+            val boosted = if (current < RiskLevel.HIGH) RiskLevel.entries[current.ordinal + 1] else current
+            reasons += RiskReason.SaturatedGround(soil, boosted)
         }
 
         return RiskAssessment(

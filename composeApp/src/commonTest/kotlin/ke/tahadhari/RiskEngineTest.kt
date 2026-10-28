@@ -146,4 +146,83 @@ class RiskEngineTest {
         assertTrue(Counties.all.filter { it.landslideAreas.isNotEmpty() }.all { it.landslideProne })
         assertTrue(!Counties.byCode(47)!!.landslideProne) // Nairobi: default false
     }
+
+    // --- Saturated ground (soil moisture) ---
+
+    // The signal is off by default (see RiskThresholds.soilSaturatedM3m3), so tests pass an explicit threshold.
+    private val soilEngine = RiskEngine(RiskThresholds(soilSaturatedM3m3 = 0.40))
+
+    @Test fun saturatedGroundIsOffByDefault() {
+        assertNull(RiskThresholds().soilSaturatedM3m3)
+        val a = engine.assess(forecast(0.0, 25.0, 0.0).copy(soilMoistureM3m3 = 0.9))
+        assertEquals(RiskLevel.MODERATE, a.level)
+        assertTrue(a.reasons.none { it is RiskReason.SaturatedGround })
+    }
+
+    private fun wet(soil: Double?, vararg mm: Double, river: RiverOutlook? = null) =
+        forecast(*mm, river = river).copy(soilMoistureM3m3 = soil)
+
+    @Test fun saturatedGroundRaisesModerateToHigh() {
+        assertEquals(RiskLevel.MODERATE, soilEngine.assess(wet(null, 0.0, 25.0, 0.0)).level)
+        val a = soilEngine.assess(wet(0.45, 0.0, 25.0, 0.0))
+        assertEquals(RiskLevel.HIGH, a.level)
+        val reason = a.reasons.filterIsInstance<RiskReason.SaturatedGround>().single()
+        assertEquals(0.45, reason.soilMoisture)
+        assertEquals(RiskLevel.HIGH, reason.level)
+    }
+
+    @Test fun saturatedGroundRaisesModerateWetSpellToo() {
+        // 3-day total 45 mm, no single day >= 20 mm: MODERATE from the wet spell only.
+        assertEquals(RiskLevel.MODERATE, soilEngine.assess(wet(null, 15.0, 15.0, 15.0)).level)
+        assertEquals(RiskLevel.HIGH, soilEngine.assess(wet(0.5, 15.0, 15.0, 15.0)).level)
+    }
+
+    @Test fun saturatedGroundNeverRaisesLow() {
+        val a = soilEngine.assess(wet(0.6, 0.0, 10.0, 5.0))
+        assertEquals(RiskLevel.LOW, a.level)
+        assertTrue(a.reasons.isEmpty())
+    }
+
+    @Test fun saturatedGroundDoesNotCreateSevere() {
+        // Rain alone is HIGH (55 mm day): wet ground must not push it to SEVERE.
+        assertEquals(RiskLevel.HIGH, soilEngine.assess(wet(0.6, 0.0, 55.0, 0.0)).level)
+    }
+
+    @Test fun saturatedGroundNeverLowersSevere() {
+        val a = soilEngine.assess(wet(0.6, 0.0, 90.0, 0.0))
+        assertEquals(RiskLevel.SEVERE, a.level)
+        assertEquals(RiskLevel.SEVERE, a.reasons.first().level)
+    }
+
+    @Test fun missingSoilDataChangesNothing() {
+        val a = soilEngine.assess(wet(null, 0.0, 25.0, 0.0))
+        assertEquals(RiskLevel.MODERATE, a.level)
+        assertTrue(a.reasons.none { it is RiskReason.SaturatedGround })
+    }
+
+    @Test fun nullThresholdDisablesTheSignal() {
+        val off = RiskEngine(RiskThresholds(soilSaturatedM3m3 = null))
+        val a = off.assess(wet(0.9, 0.0, 25.0, 0.0))
+        assertEquals(RiskLevel.MODERATE, a.level)
+        assertTrue(a.reasons.none { it is RiskReason.SaturatedGround })
+    }
+
+    @Test fun soilThresholdBoundaryIsInclusive() {
+        val e = RiskEngine(RiskThresholds(soilSaturatedM3m3 = 0.40))
+        assertEquals(RiskLevel.HIGH, e.assess(wet(0.40, 0.0, 25.0, 0.0)).level)
+        assertEquals(RiskLevel.MODERATE, e.assess(wet(0.399, 0.0, 25.0, 0.0)).level)
+    }
+
+    @Test fun saturatedGroundNeedsRainfallNotJustRiver() {
+        // River HIGH, rain only LOW: wet ground must add nothing.
+        val river = RiverOutlook("Enkare Narok", baselineDischarge = 10.0, peakDischarge = 25.0, peakDate = "2026-10-29")
+        val a = soilEngine.assess(wet(0.6, 5.0, 5.0, 5.0, river = river))
+        assertEquals(RiskLevel.HIGH, a.level)
+        assertTrue(a.reasons.none { it is RiskReason.SaturatedGround })
+    }
+
+    @Test fun saturatedGroundIsCappedAtHighWhenRiverAlreadyHigh() {
+        val river = RiverOutlook("Enkare Narok", baselineDischarge = 10.0, peakDischarge = 25.0, peakDate = "2026-10-29")
+        assertEquals(RiskLevel.HIGH, soilEngine.assess(wet(0.6, 0.0, 25.0, 0.0, river = river)).level)
+    }
 }

@@ -21,7 +21,7 @@ data class ExplainRequest(
     val riverRiseRatio: Double? = null,
     val riverPeakDayName: String? = null,
     val hotspots: List<String> = emptyList(),
-    val reasons: List<String> = emptyList(), // HEAVY_DAY, WET_SPELL, RIVER_RISING, LANDSLIDE
+    val reasons: List<String> = emptyList(), // HEAVY_DAY, WET_SPELL, RIVER_RISING, LANDSLIDE, SATURATED_GROUND
     val advisoryText: String? = null,        // optional official KMSA/county advisory text
 )
 
@@ -36,7 +36,7 @@ data class ExplainResponse(
 object ExplainContract {
     val LANGUAGES = setOf("en", "sw")
     val LEVELS = setOf("LOW", "MODERATE", "HIGH", "SEVERE")
-    val REASONS = setOf("HEAVY_DAY", "WET_SPELL", "RIVER_RISING", "LANDSLIDE")
+    val REASONS = setOf("HEAVY_DAY", "WET_SPELL", "RIVER_RISING", "LANDSLIDE", "SATURATED_GROUND")
     const val MAX_ADVISORY_CHARS = 2_000
     const val MAX_HOTSPOTS = 10
 

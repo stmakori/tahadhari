@@ -7,6 +7,7 @@ import io.ktor.serialization.kotlinx.json.json
 import ke.tahadhari.ai.AiExplainer
 import ke.tahadhari.ai.ProxyExplainClient
 import ke.tahadhari.ai.aiProxyUrl
+import ke.tahadhari.data.EnsembleRepository
 import ke.tahadhari.data.ForecastCache
 import ke.tahadhari.data.ForecastRepository
 import ke.tahadhari.data.Preferences
@@ -15,6 +16,7 @@ import ke.tahadhari.data.store.platformKeyValueStore
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import ke.tahadhari.data.remote.OpenMeteoApi
+import ke.tahadhari.data.remote.OpenMeteoEnsembleApi
 import ke.tahadhari.domain.AlertExplainer
 import ke.tahadhari.domain.RiskEngine
 import ke.tahadhari.domain.TemplateExplainer
@@ -52,6 +54,8 @@ object AppGraph {
         ForecastRepository(OpenMeteoApi(httpClient), forecastCache, ::nowMillis)
     }
     val riskEngine: RiskEngine by lazy { RiskEngine() }
+    /** Ensemble chance of heavy rain, one county at a time. Information only, never feeds [riskEngine]. */
+    val ensemble: EnsembleRepository by lazy { EnsembleRepository(OpenMeteoEnsembleApi(httpClient)) }
     /** AI explanations when a server URL is configured, offline templates otherwise. */
     val explainer: AlertExplainer by lazy {
         val url = aiProxyUrl()

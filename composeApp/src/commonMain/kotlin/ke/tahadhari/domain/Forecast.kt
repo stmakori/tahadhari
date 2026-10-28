@@ -41,4 +41,6 @@ data class CountyForecast(
     val days: List<DailyRain>,
     val river: RiverOutlook?,
     val fetchedAtDate: String,
+    /** Soil moisture at 9-27 cm (m³/m³) when the forecast was fetched; null when unknown. */
+    val soilMoistureM3m3: Double? = null,
 )

@@ -50,7 +50,7 @@ fun shareAlertMessage(county: County, ready: LoadState.Ready, language: Language
  * there are no reasons at all.
  */
 fun mainReasonText(a: RiskAssessment, language: Language, strings: Strings = Strings.of(language)): String =
-    when (val r = a.reasons.firstOrNull()) {
+    when (val r = a.reasons.firstOrNull { it !is RiskReason.SaturatedGround } ?: a.reasons.firstOrNull()) {
         null -> strings.reasonNone
         is RiskReason.HeavyDay -> strings.shareMsgRainDay(r.mm.roundToInt(), Dates.dayName(r.date, language))
         is RiskReason.WetSpell -> strings.shareMsgRainSpell(r.totalMm.roundToInt(), Dates.dayName(r.startDate, language))

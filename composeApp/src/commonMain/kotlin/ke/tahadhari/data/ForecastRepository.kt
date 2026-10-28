@@ -51,12 +51,12 @@ class ForecastRepository(
             return fromCache(county) ?: throw e
         }
         cache.write(fetched)
-        val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null)
+        val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null, soilMoisture = fetched.soilMoistureM3m3)
         return ForecastResult(forecast, fetched.fetchedAtMillis, fromCache = false)
     }
 
     private suspend fun fetch(county: County): CachedForecast = coroutineScope {
-        val rainCall = async { api.dailyRainfall(queryPoint(county)).daily }
+        val rainCall = async { api.dailyRainfall(queryPoint(county)) }
         val floodCall = county.riverPoint?.let { point ->
             async {
                 try {
@@ -69,7 +69,7 @@ class ForecastRepository(
             }
         }
         val rain = rainCall.await()
-        assemble(county, rain, floodCall?.await(), expectsFlood = floodCall != null, now = nowMillis())
+        assemble(county, rain.daily, rain.current?.soilMoisture, floodCall?.await(), expectsFlood = floodCall != null, now = nowMillis())
     }
 
     /**
@@ -80,6 +80,7 @@ class ForecastRepository(
     private suspend fun assemble(
         county: County,
         rain: RainfallDaily,
+        soilMoisture: Double?,
         freshFlood: FloodDaily?,
         expectsFlood: Boolean,
         now: Long,
@@ -96,6 +97,7 @@ class ForecastRepository(
             countyCode = county.code,
             fetchedAtMillis = now,
             rainfall = rain,
+            soilMoistureM3m3 = soilMoisture,
             flood = flood,
             floodFetchedAtMillis = floodAt,
             pointLatitude = ForecastCache.pointOf(county)?.latitude,
@@ -115,6 +117,7 @@ class ForecastRepository(
      */
     suspend fun forecastsFor(counties: List<County>): Map<Int, Result<ForecastResult>> = coroutineScope {
         val rainByCode = HashMap<Int, RainfallDaily>()
+        val soilByCode = HashMap<Int, Double>()
         val rainErrors = HashMap<Int, Throwable>()
         val floodByCode = HashMap<Int, FloodDaily>()
 
@@ -125,7 +128,10 @@ class ForecastRepository(
                     check(responses.size == chunk.size) { "Expected ${chunk.size} rainfall results but got ${responses.size}" }
                     chunk.zip(responses).forEach { (county, response) ->
                         val daily = response?.daily
-                        if (daily != null && daily.time.isNotEmpty()) rainByCode[county.code] = daily
+                        if (daily != null && daily.time.isNotEmpty()) {
+                            rainByCode[county.code] = daily
+                            response?.current?.soilMoisture?.let { soilByCode[county.code] = it }
+                        }
                         else rainErrors[county.code] = RuntimeException("No rainfall data for ${county.name}")
                     }
                 } catch (e: CancellationException) {
@@ -158,9 +164,9 @@ class ForecastRepository(
             val rain = rainByCode[county.code]
             county.code to if (rain != null) {
                 try {
-                    val fetched = assemble(county, rain, floodByCode[county.code], county.riverPoint != null, now)
+                    val fetched = assemble(county, rain, soilByCode[county.code], floodByCode[county.code], county.riverPoint != null, now)
                     cache.write(fetched)
-                    val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null)
+                    val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null, soilMoisture = fetched.soilMoistureM3m3)
                     Result.success(ForecastResult(forecast, fetched.fetchedAtMillis, fromCache = false))
                 } catch (e: CancellationException) {
                     throw e
@@ -178,7 +184,7 @@ class ForecastRepository(
     private suspend fun fromCache(county: County): ForecastResult? {
         val cached = cache.read(county.code, ForecastCache.pointOf(county)) ?: return null
         val today = Dates.isoDateFromEpochMillis(nowMillis())
-        val forecast = buildForecast(county, cached.rainfall, cached.flood, today)
+        val forecast = buildForecast(county, cached.rainfall, cached.flood, today, cached.soilMoistureM3m3)
         if (forecast.days.isEmpty()) return null // every cached day is already in the past
         return ForecastResult(
             forecast.copy(fetchedAtDate = Dates.isoDateFromEpochMillis(cached.fetchedAtMillis)),
@@ -196,7 +202,13 @@ class ForecastRepository(
          * Rebuilds a [CountyForecast] from raw API data. When [today] is given (cached data),
          * days before it are dropped because they are no longer a forecast.
          */
-        fun buildForecast(county: County, rain: RainfallDaily, flood: FloodDaily?, today: String?): CountyForecast {
+        fun buildForecast(
+            county: County,
+            rain: RainfallDaily,
+            flood: FloodDaily?,
+            today: String?,
+            soilMoisture: Double? = null,
+        ): CountyForecast {
             val days = rain.time.mapIndexed { i, date ->
                 DailyRain(
                     date = date,
@@ -209,7 +221,10 @@ class ForecastRepository(
             val river = flood?.let {
                 RiverOutlook.fromSeries(county.riverName, it.time, it.riverDischarge, firstDay)
             }
-            return CountyForecast(county = county, days = days, river = river, fetchedAtDate = firstDay)
+            return CountyForecast(
+                county = county, days = days, river = river, fetchedAtDate = firstDay,
+                soilMoistureM3m3 = soilMoisture,
+            )
         }
     }
 }
