@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import ke.tahadhari.ui.onboarding.OnboardingScreen
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -37,11 +39,24 @@ fun MobileRoot(
         Splash(darkTheme)
         return
     }
+    // The intro runs once. Language picked in it is saved at once and carried into the app.
+    var introDone by rememberSaveable { mutableStateOf(loaded.onboardingDone) }
+    var language by rememberSaveable { mutableStateOf(loaded.language) }
+    if (!introDone) {
+        TahadhariTheme(darkTheme) {
+            OnboardingScreen(
+                language = language,
+                onLanguage = { l -> language = l; scope.launch { preferences.setLanguage(l) } },
+                onFinish = { introDone = true; scope.launch { preferences.setOnboardingDone(true) } },
+            )
+        }
+        return
+    }
     MobileApp(
         initialCountyCode = loaded.countyCode,
-        initialLanguage = loaded.language,
+        initialLanguage = language,
         onCountyChange = { code -> if (code != null) scope.launch { preferences.setCounty(code) } },
-        onLanguageChange = { language -> scope.launch { preferences.setLanguage(language) } },
+        onLanguageChange = { l -> language = l; scope.launch { preferences.setLanguage(l) } },
         darkTheme = darkTheme,
     )
 }

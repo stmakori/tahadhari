@@ -129,23 +129,28 @@ fun RiskHeroCard(county: County, assessment: RiskAssessment, language: Language,
                     modifier = Modifier.semantics { heading() },
                 )
             }
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = strings.riskDescription(level) },
+            // One merged announcement: "Severe flood risk. Wettest day: 99 mm on Thursday. ..."
+            val reasons = reasonLines(assessment, language, strings)
+            val summary = (listOf(strings.riskHeadline(level)) + reasons.map { it.second }.ifEmpty { listOf(strings.reasonNone) })
+                .joinToString(". ")
+            Column(
+                Modifier.semantics(mergeDescendants = true) { contentDescription = summary },
+                verticalArrangement = Arrangement.spacedBy(Spacing.lg),
             ) {
-                RiskMark(level, Modifier.size(56.dp))
-                Spacer(Modifier.width(Spacing.lg))
-                Column(Modifier.weight(1f)) {
-                    Text(strings.floodRisk.uppercase(), style = MaterialTheme.typography.labelMedium)
-                    Text(strings.risk(level), style = MaterialTheme.typography.displaySmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RiskMark(level, Modifier.size(56.dp))
+                    Spacer(Modifier.width(Spacing.lg))
+                    Column(Modifier.weight(1f)) {
+                        Text(strings.floodRisk.uppercase(), style = MaterialTheme.typography.labelMedium)
+                        Text(strings.risk(level), style = MaterialTheme.typography.displaySmall)
+                    }
+                    LevelMeter(level, emptyColor = c.onContainer.copy(alpha = 0.18f))
                 }
-                LevelMeter(level, emptyColor = c.onContainer.copy(alpha = 0.18f))
-            }
-            HorizontalDivider(color = c.onContainer.copy(alpha = 0.15f))
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
-                val reasons = reasonLines(assessment, language, strings)
-                if (reasons.isEmpty()) ReasonRow(AppIcons.Check, strings.reasonNone)
-                reasons.forEach { (icon, text) -> ReasonRow(icon, text) }
+                HorizontalDivider(color = c.onContainer.copy(alpha = 0.15f))
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    if (reasons.isEmpty()) ReasonRow(AppIcons.Check, strings.reasonNone)
+                    reasons.forEach { (icon, text) -> ReasonRow(icon, text) }
+                }
             }
         }
     }

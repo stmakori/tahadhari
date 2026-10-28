@@ -1,0 +1,39 @@
+package ke.tahadhari.ui.mobile
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import ke.tahadhari.domain.Language
+import ke.tahadhari.ui.*
+
+/** Full-screen About page for the phone: back arrow, language toggle and a scrolling [AboutContent]. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun AboutPage(language: Language, onLanguage: (Language) -> Unit, onBack: () -> Unit) {
+    val strings = Strings.of(language)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        strings.aboutTitle,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 2,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(AppIcons.ArrowBack, strings.aboutBack) } },
+                actions = { LanguageToggle(language, onLanguage, Modifier.padding(end = Spacing.sm)) },
+            )
+        },
+    ) { padding ->
+        Column(Modifier.padding(padding).consumeWindowInsets(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
+            AboutContent(language, Modifier.padding(Spacing.lg))
+        }
+    }
+}
