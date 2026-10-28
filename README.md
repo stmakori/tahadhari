@@ -189,6 +189,16 @@ misses the channel gives meaningless ratios. Landslide-prone counties (Murang'a,
 Elgeyo-Marakwet, Nandi, Kericho, Taita-Taveta, Nyeri, Bungoma, Kiambu) are marked only where a
 reported landslide or a susceptibility study backs it; sources are in `Counties.kt`.
 
+**Saturated ground (available, off by default; the back-test did not support it, see `docs/validation.md` section 8).** Floods come from rain on ground that is already soaked, so the app also reads
+soil moisture (9-27 cm, Open-Meteo `soil_moisture_9_to_27cm`, in the same request as rainfall). If it
+is at or above `RiskThresholds.soilSaturatedM3m3` and the rainfall-based level is already at least Moderate, the level goes up one step,
+capped at High. It never raises Low, never creates Severe, never lowers a level, and missing soil data
+changes nothing. The threshold is `null` in the shipped app, so users never see this reason.
+
+**Chance of heavy rain (information only).** The county detail also shows how many of the 51 ECMWF
+ensemble runs have a day over 50 mm this week, for the county you are viewing only. It never changes
+the risk level, and is hidden while loading or if the request fails.
+
 ### How well does it work?
 
 [`docs/validation.md`](docs/validation.md) replays the March–May 2024 floods (about 290 deaths by
@@ -210,7 +220,10 @@ That is why every screen says Tahadhari is guidance, not an official warning. Re
 ## Data sources
 
 - Weather and river discharge data from [Open-Meteo](https://open-meteo.com/) (forecast API and
-  flood API, based on GloFAS), licensed under CC BY 4.0.
+  flood API, based on GloFAS), licensed under CC BY 4.0. Soil moisture comes from the same forecast API.
+- Chance of heavy rain: [Open-Meteo Ensemble API](https://open-meteo.com/en/docs/ensemble-api), ECMWF
+  IFS ensemble (`ecmwf_ifs025`, 51 members). Open-Meteo data is CC BY 4.0 and ECMWF open data is
+  CC BY 4.0, so credit both: "Weather data by Open-Meteo.com; ECMWF IFS ensemble, CC BY 4.0".
 - County boundaries from [geoBoundaries](https://www.geoboundaries.org/) gbOpen KEN ADM1 (source:
   RCMRD), public domain. Runfola et al. (2020), *geoBoundaries: A global database of political
   administrative boundaries*, PLoS ONE 15(4): e0231866. Simplified with

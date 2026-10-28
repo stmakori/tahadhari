@@ -19,6 +19,8 @@ data class CachedForecast(
     val flood: FloodDaily? = null,
     /** When [flood] was fetched. Can be older than [fetchedAtMillis] if the flood API failed. */
     val floodFetchedAtMillis: Long? = null,
+    /** Soil moisture 9-27 cm (m³/m³) at [fetchedAtMillis]; null when the API gave none. */
+    val soilMoistureM3m3: Double? = null,
     val version: Int = CURRENT_VERSION,
 ) {
     companion object {

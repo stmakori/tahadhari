@@ -46,6 +46,7 @@ fun CountyDetail(
     modifier: Modifier = Modifier,
     statusLine: (@Composable (LoadState.Ready) -> Unit)? = { DataStatusLine(it, Strings.of(language)) },
     explainer: AlertExplainer = AppGraph.explainer,
+    heavyRainChance: (suspend (County) -> HeavyRainChance?)? = { AppGraph.ensemble.chanceFor(it) },
     onRetry: () -> Unit,
 ) {
     val strings = Strings.of(language)
@@ -62,6 +63,7 @@ fun CountyDetail(
             is LoadState.Ready -> CountyReadyContent(
                 county, state.forecast, state.assessment, language, explainer,
                 statusLine = statusLine?.let { slot -> { slot(state) } },
+                heavyRainChance = heavyRainChance,
             )
         }
         Disclaimer(strings)
@@ -86,6 +88,7 @@ internal fun CountyReadyContent(
     language: Language,
     explainer: AlertExplainer,
     statusLine: (@Composable () -> Unit)? = null,
+    heavyRainChance: (suspend (County) -> HeavyRainChance?)? = null,
 ) {
     val strings = Strings.of(language)
     var explanation by remember(county.code, language, assessment) { mutableStateOf<Explanation?>(null) }
@@ -100,6 +103,7 @@ internal fun CountyReadyContent(
     SectionCard {
         SectionTitle(AppIcons.Drop, strings.rainNext7)
         RainChart(forecast.days, language, today = forecast.fetchedAtDate)
+        if (heavyRainChance != null) HeavyRainChanceLine(county, heavyRainChance, strings)
     }
     assessment.river?.let { RiverCard(it, language) }
     explanation?.let { ActionChecklist(it.actions, strings) }
@@ -157,12 +161,28 @@ fun RiskHeroCard(county: County, assessment: RiskAssessment, language: Language,
     }
 }
 
+/**
+ * One information line from the ensemble forecast. Loaded lazily for this county only; hidden while
+ * loading and on any failure (never shows 0% as a placeholder). Does not touch the risk level.
+ */
+@Composable
+private fun HeavyRainChanceLine(county: County, load: suspend (County) -> HeavyRainChance?, strings: Strings) {
+    val chance by produceState<HeavyRainChance?>(null, county.code) { value = null; value = load(county) }
+    chance?.let { c ->
+        Column(Modifier.testTag("heavy_rain_chance"), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+            Text(strings.heavyRainChance(c.highMm.roundToInt(), c.overHigh, c.members, c.highPercent), style = MaterialTheme.typography.bodyMedium)
+            Text(strings.heavyRainChanceSource, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
 private fun reasonLines(a: RiskAssessment, language: Language, s: Strings): List<Pair<ImageVector, String>> =
     a.reasons.map { r ->
         when (r) {
             is RiskReason.HeavyDay -> AppIcons.Drop to s.reasonHeavyDay(r.mm.roundToInt(), Dates.dayName(r.date, language))
             is RiskReason.WetSpell -> AppIcons.Drop to s.reasonWetSpell(r.totalMm.roundToInt(), Dates.dayName(r.startDate, language))
             is RiskReason.LandslideRisk -> AppIcons.Drop to s.reasonLandslide(r.totalMm.roundToInt(), Dates.dayName(r.startDate, language))
+            is RiskReason.SaturatedGround -> AppIcons.Drop to s.reasonSaturated
             is RiskReason.RiverRising -> AppIcons.Waves to s.reasonRiver(r.riverName ?: s.nearbyRiver, r.ratio.oneDecimal())
         }
     }

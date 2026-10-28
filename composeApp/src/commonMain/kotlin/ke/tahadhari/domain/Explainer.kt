@@ -79,10 +79,17 @@ class TemplateExplainer : AlertExplainer {
         val acts = if (landslide) landslideActions(sw) + actions(a.level, sw) else actions(a.level, sw)
         return Explanation(
             headline,
-            body + landslideClause(county, landslide, sw) + hotspots,
+            body + wetGroundClause(a, sw) + landslideClause(county, landslide, sw) + hotspots,
             acts.take(MAX_ACTIONS),
             ExplanationSource.TEMPLATE,
         )
+    }
+
+    private fun wetGroundClause(a: RiskAssessment, sw: Boolean): String {
+        if (a.reasons.none { it is RiskReason.SaturatedGround }) return ""
+        // TODO(review): Swahili wording needs a fluent speaker's check.
+        return if (sw) " Ardhi tayari imeloa sana, kwa hiyo maji ya mvua yatatiririka haraka badala ya kuingia ardhini."
+        else " The ground is already very wet, so rain will run off quickly instead of soaking in."
     }
 
     private fun landslideClause(county: County, landslide: Boolean, sw: Boolean): String {

@@ -37,6 +37,7 @@ fun AboutContent(language: Language, modifier: Modifier = Modifier) {
             SectionTitle(AppIcons.Map, strings.aboutDataTitle)
             Bullet(strings.aboutDataWeather)
             Bullet(strings.aboutDataRiver)
+            Bullet(strings.aboutDataEnsemble)
             Bullet(strings.aboutDataBoundaries)
             Bullet(strings.aboutDataGuides)
         }

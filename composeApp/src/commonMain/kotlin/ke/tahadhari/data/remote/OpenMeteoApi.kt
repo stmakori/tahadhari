@@ -39,6 +39,12 @@ interface ForecastApi {
 /** Open-Meteo accepts many comma-separated coordinates per call; stay well under its limit and URL length. */
 const val MAX_POINTS_PER_CALL = 50
 
+/**
+ * Soil moisture (m³/m³) in the 9-27 cm layer (the root zone). There is no daily aggregate, so we ask
+ * for `current=` which adds one number to the same request instead of 24 hourly values per day.
+ */
+const val SOIL_MOISTURE_VARIABLE = "soil_moisture_9_to_27cm"
+
 class OpenMeteoApi(private val client: HttpClient) : ForecastApi {
     private val lenientJson = Json { ignoreUnknownKeys = true; isLenient = true }
 
@@ -47,6 +53,7 @@ class OpenMeteoApi(private val client: HttpClient) : ForecastApi {
             parameter("latitude", point.latitude)
             parameter("longitude", point.longitude)
             parameter("daily", "precipitation_sum,precipitation_probability_max")
+            parameter("current", SOIL_MOISTURE_VARIABLE)
             parameter("timezone", "Africa/Nairobi")
             parameter("forecast_days", forecastDays)
         }.body()
@@ -66,6 +73,7 @@ class OpenMeteoApi(private val client: HttpClient) : ForecastApi {
                 parameter("latitude", chunk.joinToString(",") { it.latitude.toString() })
                 parameter("longitude", chunk.joinToString(",") { it.longitude.toString() })
                 parameter("daily", "precipitation_sum,precipitation_probability_max")
+                parameter("current", SOIL_MOISTURE_VARIABLE)
                 parameter("timezone", "Africa/Nairobi")
                 parameter("forecast_days", forecastDays)
             }.bodyAsText()
@@ -110,7 +118,12 @@ fun <T> parseBatch(json: Json, text: String, expected: Int, serializer: KSeriali
 }
 
 @Serializable
-data class RainfallResponse(val daily: RainfallDaily)
+data class RainfallResponse(val daily: RainfallDaily, val current: RainfallCurrent? = null)
+
+@Serializable
+data class RainfallCurrent(
+    @SerialName("soil_moisture_9_to_27cm") val soilMoisture: Double? = null,
+)
 
 @Serializable
 data class RainfallDaily(

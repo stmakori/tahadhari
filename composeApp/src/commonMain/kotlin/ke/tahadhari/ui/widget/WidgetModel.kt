@@ -59,11 +59,13 @@ fun widgetUiState(prefs: UserPreferences, loadState: LoadState?): WidgetUiState 
 }
 
 private fun reasonOf(state: LoadState.Ready): WidgetReason =
-    when (val top = state.assessment.reasons.firstOrNull()) {
+    // Wet ground only amplifies rain; the widget names the rain or river reason behind the level.
+    when (val top = state.assessment.reasons.firstOrNull { it !is RiskReason.SaturatedGround }) {
         is RiskReason.HeavyDay -> WidgetReason.WettestDay(top.mm.roundToInt())
         is RiskReason.WetSpell -> WidgetReason.WetSpell(top.totalMm.roundToInt())
         is RiskReason.LandslideRisk -> WidgetReason.WetSpell(top.totalMm.roundToInt())
         is RiskReason.RiverRising -> WidgetReason.RiverRising(oneDecimal(top.ratio))
+        is RiskReason.SaturatedGround -> WidgetReason.Quiet // unreachable: filtered above
         null -> state.assessment.wettestDay?.let { WidgetReason.WettestDay(it.precipitationMm.roundToInt()) }
             ?: WidgetReason.Quiet
     }
@@ -137,7 +139,7 @@ suspend fun loadSavedForWidget(
         return LoadState.Failed("Saved forecast is too old", staleSinceMillis = saved.fetchedAtMillis)
     }
     val today = Dates.isoDateFromEpochMillis(nowMillis)
-    val forecast = ke.tahadhari.data.ForecastRepository.buildForecast(county, saved.rainfall, saved.flood, today)
+    val forecast = ke.tahadhari.data.ForecastRepository.buildForecast(county, saved.rainfall, saved.flood, today, saved.soilMoistureM3m3)
     if (forecast.days.isEmpty()) return LoadState.Failed("Saved forecast has no days left", saved.fetchedAtMillis)
     return LoadState.Ready(
         forecast = forecast.copy(fetchedAtDate = Dates.isoDateFromEpochMillis(saved.fetchedAtMillis)),
