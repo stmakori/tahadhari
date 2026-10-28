@@ -22,9 +22,12 @@ import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
 import ke.tahadhari.AppGraph
 import ke.tahadhari.data.County
 import ke.tahadhari.domain.*
+import ke.tahadhari.platform.openOfficialUrl
+import androidx.compose.ui.text.style.TextAlign
 import kotlin.math.roundToInt
 
 private fun Double.oneDecimal(): String = ((this * 10).roundToInt() / 10.0).toString()
@@ -66,7 +69,25 @@ fun CountyDetail(
                 heavyRainChance = heavyRainChance,
             )
         }
+        if (state !is LoadState.Loading) OfficialForecastLink(strings)
         Disclaimer(strings)
+    }
+}
+
+/** Opens KMD's county forecast index in the browser, plus a note on who issues official warnings. */
+@Composable
+internal fun OfficialForecastLink(strings: Strings, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.xs)) {
+        OutlinedButton(
+            onClick = { openOfficialUrl(OfficialLinks.KMD_COUNTY_FORECASTS) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.touch).testTag("official_forecast")
+                .semantics { stateDescription = strings.official.buttonHint },
+        ) {
+            Icon(AppIcons.Document, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(Spacing.sm))
+            Text(strings.official.button, textAlign = TextAlign.Center)
+        }
+        Text(strings.official.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -142,15 +163,17 @@ fun RiskHeroCard(county: County, assessment: RiskAssessment, language: Language,
                 Modifier.semantics(mergeDescendants = true) { contentDescription = summary },
                 verticalArrangement = Arrangement.spacedBy(Spacing.lg),
             ) {
+                val stacked = LocalDensity.current.fontScale > 1.3f // no room for the meter beside the level word
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RiskMark(level, Modifier.size(56.dp))
                     Spacer(Modifier.width(Spacing.lg))
                     Column(Modifier.weight(1f)) {
                         Text(strings.floodRisk.uppercase(), style = MaterialTheme.typography.labelMedium)
-                        Text(strings.risk(level), style = MaterialTheme.typography.displaySmall)
+                        CappedFontScale(1.5f) { Text(strings.risk(level), style = MaterialTheme.typography.displaySmall) }
                     }
-                    LevelMeter(level, emptyColor = c.onContainer.copy(alpha = 0.18f))
+                    if (!stacked) LevelMeter(level, emptyColor = c.onContainer.copy(alpha = 0.18f))
                 }
+                if (stacked) LevelMeter(level, emptyColor = c.onContainer.copy(alpha = 0.18f))
                 HorizontalDivider(color = c.onContainer.copy(alpha = 0.15f))
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     if (reasons.isEmpty()) ReasonRow(AppIcons.Check, strings.reasonNone)
@@ -299,7 +322,7 @@ private fun ChecklistRow(number: Int, text: String, checked: Boolean, strings: S
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(28.dp).clip(CircleShape).background(circle).border(2.dp, scheme.primary, CircleShape),
+            Modifier.size(scaledWithFont(28.dp)).clip(CircleShape).background(circle).border(2.dp, scheme.primary, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             if (checked) Icon(AppIcons.Check, null, Modifier.size(18.dp), tint = scheme.onPrimary)

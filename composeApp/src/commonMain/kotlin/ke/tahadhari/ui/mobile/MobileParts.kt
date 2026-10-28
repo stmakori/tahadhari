@@ -44,7 +44,7 @@ internal fun StepRow(number: Int, text: String, checked: Boolean, strings: Strin
         verticalAlignment = Alignment.Top,
     ) {
         Box(
-            Modifier.size(28.dp).clip(CircleShape).background(circle).border(2.dp, scheme.primary, CircleShape),
+            Modifier.size(scaledWithFont(28.dp)).clip(CircleShape).background(circle).border(2.dp, scheme.primary, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             if (checked) Icon(AppIcons.Check, null, Modifier.size(18.dp), tint = scheme.onPrimary)

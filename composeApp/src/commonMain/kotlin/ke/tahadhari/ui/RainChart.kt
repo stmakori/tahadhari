@@ -27,6 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.CompositionLocalProvider
 import ke.tahadhari.domain.DailyRain
 import ke.tahadhari.domain.Dates
 import ke.tahadhari.domain.Language
@@ -69,7 +71,9 @@ fun RainChart(
     }
     val gutter = 40.dp // right-hand space for threshold labels
 
-    Column(modifier.clearAndSetSemantics { contentDescription = description }) {
+    // The axis labels share 7 narrow columns, so they cannot grow with the system font; the legend below does.
+    val fullDensity = LocalDensity.current
+    CappedFontScale { Column(modifier.clearAndSetSemantics { contentDescription = description }) {
         Canvas(Modifier.fillMaxWidth().height(168.dp)) {
             if (days.isEmpty()) return@Canvas
             val topPad = 22.dp.toPx()
@@ -150,10 +154,12 @@ fun RainChart(
             }
         }
         Spacer(Modifier.height(10.dp))
-        Text(
-            strings.chartLegend(thresholds.dailyModerateMm.roundToInt(), thresholds.dailyHighMm.roundToInt()) + " · " + strings.chanceLegend,
-            style = MaterialTheme.typography.bodySmall,
-            color = scheme.onSurfaceVariant,
-        )
-    }
+        CompositionLocalProvider(LocalDensity provides fullDensity) {
+            Text(
+                strings.chartLegend(thresholds.dailyModerateMm.roundToInt(), thresholds.dailyHighMm.roundToInt()) + " · " + strings.chanceLegend,
+                style = MaterialTheme.typography.bodySmall,
+                color = scheme.onSurfaceVariant,
+            )
+        }
+    } }
 }

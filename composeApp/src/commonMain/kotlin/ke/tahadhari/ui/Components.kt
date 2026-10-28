@@ -26,8 +26,62 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import ke.tahadhari.domain.Language
+
+/**
+ * Top bar that grows with the font scale. Material's TopAppBar is a fixed 64dp, which clips a second
+ * line of text at large font sizes, so this uses a minimum height instead.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FlexibleTopBar(
+    title: String,
+    subtitle: String? = null,
+    modifier: Modifier = Modifier,
+    navigation: @Composable () -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
+) {
+    // At large text the title, tagline and buttons cannot share one row (the title would break mid-word),
+    // so the buttons move to their own row and the text gets the full width.
+    val stacked = LocalDensity.current.fontScale > 1.15f
+    Surface(modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface) {
+        Column(Modifier.windowInsetsPadding(TopAppBarDefaults.windowInsets)) {
+            Row(Modifier.heightIn(min = 64.dp).padding(horizontal = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+                navigation()
+                Column(Modifier.weight(1f).padding(horizontal = Spacing.xs, vertical = Spacing.xs)) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 5,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.semantics { heading() },
+                    )
+                    if (subtitle != null) {
+                        Text(
+                            subtitle,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 5,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+                if (!stacked) actions()
+            }
+            if (stacked) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = Spacing.xs),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) { actions() }
+            }
+        }
+    }
+}
 
 /** Pill toggle between English and Kiswahili. Each option is a 48dp touch target. */
 @Composable
@@ -36,7 +90,8 @@ fun LanguageToggle(language: Language, onChange: (Language) -> Unit, modifier: M
     val scheme = MaterialTheme.colorScheme
     Row(
         modifier
-            .height(Spacing.touch)
+            .defaultMinSize(minHeight = Spacing.touch)
+            .height(IntrinsicSize.Min) // grows with large text instead of clipping "EN" / "SW"
             .padding(vertical = 6.dp)
             .clip(CircleShape)
             .border(1.dp, scheme.outlineVariant, CircleShape)

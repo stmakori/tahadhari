@@ -17,6 +17,19 @@ actual fun dialNumber(number: String) = copy(number)
 
 actual fun shareText(text: String, title: String) = copy(text)
 
+/** Opens the default browser; where that is not supported (or fails) the address is copied instead. */
+actual fun openUrl(url: String) {
+    try {
+        if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.BROWSE)) {
+            java.awt.Desktop.getDesktop().browse(java.net.URI(url))
+            return
+        }
+    } catch (_: Exception) {
+        // Fall through to the clipboard.
+    }
+    copy(url)
+}
+
 actual val copiesToClipboard: Boolean = true
 
 /** No location on desktop: the "Use my location" button is hidden. */

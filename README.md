@@ -261,6 +261,11 @@ That is why every screen says Tahadhari is guidance, not an official warning. Re
   RCMRD), public domain. Runfola et al. (2020), *geoBoundaries: A global database of political
   administrative boundaries*, PLoS ONE 15(4): e0231866. Simplified with
   `tools/geo/build_county_shapes.py`.
+- Official forecast link: the county detail screen opens the Kenya Meteorological Department's county
+  forecast index, <https://meteo.go.ke/our-products/county-forecasts/> (checked 2026-10-28, HTTP 200).
+  Per-county pages exist but their addresses contain that week's dates, so only the index is linked.
+  Also checked: `/our-products/daily-forecast/`, `/5-day-forecast/`, `/monthly-forecast/` and
+  `/weather-warnings/`. KMD has no public API; the app only opens the page, it does not read it.
 - Safety guide content is based on Kenya Red Cross, Kenya Ministry of Health, WHO, USGS and US
   National Weather Service guidance. Each guide lists its sources in the app.
 

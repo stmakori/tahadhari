@@ -102,7 +102,9 @@ private fun RiskTableCard(strings: Strings, thresholds: RiskThresholds = RiskThr
                 levels.forEach { level ->
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         RiskMark(level, Modifier.size(16.dp))
-                        Text(strings.risk(level), style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2)
+                        CappedFontScale {
+                            Text(strings.risk(level), style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2)
+                        }
                     }
                 }
             }

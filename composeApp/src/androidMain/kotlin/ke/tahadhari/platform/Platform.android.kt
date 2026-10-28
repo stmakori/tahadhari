@@ -54,6 +54,9 @@ actual fun shareText(text: String, title: String) {
     startSafely(Intent.createChooser(send, title))
 }
 
+/** [startSafely] ignores ActivityNotFoundException, so a phone with no browser simply does nothing. */
+actual fun openUrl(url: String) = startSafely(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+
 actual val copiesToClipboard: Boolean = false
 
 @Composable

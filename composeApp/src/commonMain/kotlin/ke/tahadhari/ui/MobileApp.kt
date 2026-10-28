@@ -111,31 +111,14 @@ fun MobileApp(
         }
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                strings.appName,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.semantics { heading() },
-                            )
-                            Text(
-                                when {
-                                    countyBack -> strings.countyLabel(county!!.name)
-                                    guideBack -> guide!!.content(language).title
-                                    else -> strings.tagline
-                                },
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
+                FlexibleTopBar(
+                    title = strings.appName,
+                    subtitle = when {
+                        countyBack -> strings.countyLabel(county!!.name)
+                        guideBack -> guide!!.content(language).title
+                        else -> strings.tagline
                     },
-                    navigationIcon = {
+                    navigation = {
                         if (countyBack) IconButton(onClick = { selectCounty(null) }) { Icon(AppIcons.ArrowBack, strings.allCounties) }
                         else if (guideBack) IconButton(onClick = { guideId = null }) { Icon(AppIcons.ArrowBack, strings.allGuides) }
                         else AppMark(Modifier.padding(horizontal = Spacing.md).size(36.dp))
@@ -179,7 +162,9 @@ private fun RowScope.TabItem(current: MobileTab, tab: MobileTab, icon: ImageVect
         selected = current == tab,
         onClick = { onSelect(tab) },
         icon = { Icon(icon, null) },
-        label = { Text(label) },
+        // Three labels share the width, so a 2x "Emergency" cannot fit. Material's own guidance is to cap
+        // text scaling in bottom navigation; the rest of the screen keeps the full system scale.
+        label = { CappedFontScale { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
     )
 }
 

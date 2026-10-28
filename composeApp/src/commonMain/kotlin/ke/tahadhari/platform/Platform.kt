@@ -74,3 +74,13 @@ expect fun speakAloud(text: String, language: Language, englishFallback: String,
 
 /** Stops speech started by [speakAloud] and releases the engine. Safe to call at any time. */
 expect fun stopSpeaking()
+
+/** Opens [url] in the browser. Callers must go through [openOfficialUrl], which enforces https. */
+expect fun openUrl(url: String)
+
+/** Opens [url] in the browser only if it passes [ke.tahadhari.domain.OfficialLinks.isOpenable]. Returns whether it tried. */
+fun openOfficialUrl(url: String): Boolean {
+    if (!ke.tahadhari.domain.OfficialLinks.isOpenable(url)) return false
+    openUrl(url)
+    return true
+}
