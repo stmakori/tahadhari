@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ke.tahadhari.domain.DailyRain
 import ke.tahadhari.domain.Dates
@@ -132,6 +133,11 @@ fun RainChart(
                         fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.SemiBold,
                         color = if (isToday) scheme.primary else scheme.onSurface,
                         maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Visible,
+                        // "Today" is wider than a column on small phones; let it spill into the
+                        // neighbouring columns, whose short weekday labels leave room.
+                        modifier = Modifier.wrapContentWidth(unbounded = true),
                     )
                     Text(Dates.dayOfMonth(day.date), style = MaterialTheme.typography.labelSmall, color = scheme.onSurfaceVariant)
                     day.probabilityPercent?.let { p ->
