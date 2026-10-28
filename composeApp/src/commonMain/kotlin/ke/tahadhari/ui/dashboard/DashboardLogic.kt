@@ -1,6 +1,7 @@
 package ke.tahadhari.ui.dashboard
 
 import ke.tahadhari.data.County
+import ke.tahadhari.domain.Freshness
 import ke.tahadhari.domain.RiskLevel
 import ke.tahadhari.ui.LoadState
 import ke.tahadhari.ui.levelCounts
@@ -73,4 +74,23 @@ fun oldestUpdatedAt(states: Map<Int, LoadState>): Long? =
 fun rankOf(code: Int, ranked: List<County>, states: Map<Int, LoadState>): Int? {
     if (states[code] !is LoadState.Ready) return null
     return ranked.filter { states[it.code] is LoadState.Ready }.indexOfFirst { it.code == code } + 1
+}
+
+/**
+ * Combines a county's [previous] state with the result of a reload ([incoming]) so a reload never
+ * makes the dashboard worse. A fresh live result always wins. If the reload fell back to the saved
+ * cache or failed, we keep the good data we already have (flagged `fromCache`, with its original
+ * update time) unless it is too old to show (see `Freshness`), in which case the honest result wins.
+ */
+fun mergeReload(previous: LoadState?, incoming: LoadState, nowMillis: Long): LoadState {
+    if (previous !is LoadState.Ready) return incoming
+    val keepPrevious = previous.copy(fromCache = true)
+    val previousUsable = !Freshness.isTooOldToShow(previous.updatedAtMillis, nowMillis)
+    return when {
+        incoming is LoadState.Ready && !incoming.fromCache -> incoming
+        incoming is LoadState.Ready ->
+            if (incoming.updatedAtMillis > previous.updatedAtMillis || !previousUsable) incoming else keepPrevious
+        incoming is LoadState.Failed -> if (previousUsable) keepPrevious else incoming
+        else -> incoming
+    }
 }

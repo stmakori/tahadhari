@@ -2,7 +2,10 @@ package ke.tahadhari.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
@@ -160,13 +164,17 @@ private fun CountyRow(county: County, rank: Int?, state: LoadState?, selected: B
         is LoadState.Failed -> scheme.outline
         else -> scheme.outlineVariant
     }
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
     Row(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = Spacing.sm, vertical = 2.dp)
             .clip(MaterialTheme.shapes.small)
             .background(if (selected) scheme.secondaryContainer else Color.Transparent)
-            .clickable(onClick = onClick)
+            // Clear focus ring for keyboard users (Tab to a row, Enter/Space to select).
+            .then(if (focused) Modifier.border(2.dp, scheme.primary, MaterialTheme.shapes.small) else Modifier)
+            .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
             .semantics { this.selected = selected }
             .padding(horizontal = Spacing.sm, vertical = Spacing.sm),
         verticalAlignment = Alignment.CenterVertically,

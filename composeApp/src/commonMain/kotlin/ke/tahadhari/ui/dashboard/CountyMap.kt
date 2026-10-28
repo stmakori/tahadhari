@@ -58,6 +58,7 @@ import ke.tahadhari.ui.RiskBadge
 import ke.tahadhari.ui.RiskMark
 import ke.tahadhari.ui.Spacing
 import ke.tahadhari.ui.Strings
+import ke.tahadhari.ui.levelCounts
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -109,7 +110,7 @@ fun CountyMap(
             Modifier
                 .fillMaxSize()
                 .onSizeChanged { size = it }
-                .semantics { contentDescription = strings.mapDescription }
+                .semantics { contentDescription = mapSummary(strings, states) }
                 .pointerHoverIcon(if (hover != null) PointerIcon.Hand else PointerIcon.Default)
                 .pointerInput(projection) {
                     awaitPointerEventScope {
@@ -319,3 +320,19 @@ private fun DrawScope.drawLevelMark(level: RiskLevel, shape: Color, glyph: Color
 
 private fun Path.moveTo(o: Offset) = moveTo(o.x, o.y)
 private fun Path.lineTo(o: Offset) = lineTo(o.x, o.y)
+
+/**
+ * Screen-reader summary of the map: the description plus how many counties are at each level,
+ * so the information in the colours is available as text. Counties without data are counted
+ * as "no data", never as Low.
+ */
+internal fun mapSummary(strings: Strings, states: Map<Int, LoadState>): String {
+    val total = CountyShapes.all.size
+    val levels = states.filterKeys { it in CountyShapes.all }.levelCounts()
+    val failed = states.filterKeys { it in CountyShapes.all }.values.count { it is LoadState.Failed }
+    val parts = RiskLevel.entries.reversed().mapNotNull { l -> levels[l]?.takeIf { it > 0 }?.let { "${strings.risk(l)} $it" } }
+    val loading = total - levels.values.sum() - failed
+    return (listOf(strings.mapDescription) +
+        listOfNotNull(parts.takeIf { it.isNotEmpty() }?.joinToString(", "), failed.takeIf { it > 0 }?.let { "${strings.noDataShort} $it" },
+            loading.takeIf { it > 0 }?.let { "${strings.loadingShort} $it" })).joinToString(". ")
+}
