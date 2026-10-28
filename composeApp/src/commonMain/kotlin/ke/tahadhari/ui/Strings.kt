@@ -247,6 +247,21 @@ data class Strings(
     val aboutPrivacyNotify: String,
     val riskAlertsOn: String,
     val riskAlertsOff: String,
+    // --- Read aloud ---
+    val readAloud: String,
+    val stopReading: String,
+    val speechSwahiliMissing: String,
+    val speechFailed: String,
+    val speakDisclaimer: String,
+    val speakSaved: String,
+    // --- Forecast for the user's own point ---
+    val pointForHq: (county: String) -> String,
+    val pointForYou: String,
+    val pointRounded: String,
+    val pointUse: String,
+    val pointBackToHq: (county: String) -> String,
+    val pointTooFar: (county: String) -> String,
+    val aboutPrivacyPoint: String,
 ) {
     companion object {
         val english = Strings(
@@ -514,6 +529,20 @@ data class Strings(
                 "No account, token or extra data is sent for them.",
             riskAlertsOn = "On",
             riskAlertsOff = "Off",
+            readAloud = "Read aloud",
+            stopReading = "Stop reading",
+            speechSwahiliMissing = "No Swahili voice is installed on this phone, so the alert is read in English.",
+            speechFailed = "Couldn't read the alert aloud on this device.",
+            speakDisclaimer = "This is guidance, not an official warning. Follow Kenya Meteorological Service and your county advice.",
+            speakSaved = "This is a saved forecast, not the latest one.",
+            pointForHq = { n -> "Forecast for $n HQ" },
+            pointForYou = "Forecast for your location (approx.)",
+            pointRounded = "Your location is rounded to about 1 km before the forecast is requested. It is not saved.",
+            pointUse = "Use my exact location",
+            pointBackToHq = { n -> "Back to $n HQ forecast" },
+            pointTooFar = { n -> "Your location is outside $n County or too far from its main town, so the county forecast is shown." },
+            aboutPrivacyPoint = "If you choose \"Use my exact location\" on a forecast, your location is rounded to about 1 km " +
+                "and those rounded coordinates are sent to Open-Meteo instead of the county town's. They are kept only while you view that forecast.",
         )
 
         val swahili = Strings(
@@ -795,6 +824,20 @@ data class Strings(
                 "Hakuna akaunti, tokeni wala data ya ziada inayotumwa kwa ajili yake.",
             riskAlertsOn = "Imewashwa",
             riskAlertsOff = "Imezimwa",
+            readAloud = "Soma kwa sauti", // TODO(review)
+            stopReading = "Acha kusoma", // TODO(review)
+            speechSwahiliMissing = "Simu hii haina sauti ya Kiswahili, kwa hiyo tahadhari inasomwa kwa Kiingereza.", // TODO(review)
+            speechFailed = "Imeshindwa kusoma tahadhari kwa sauti kwenye kifaa hiki.", // TODO(review)
+            speakDisclaimer = "Huu ni mwongozo, si tahadhari rasmi. Fuata ushauri wa Idara ya Hali ya Hewa Kenya na wa kaunti yako.", // TODO(review)
+            speakSaved = "Huu ni utabiri uliohifadhiwa, si wa hivi karibuni.", // TODO(review)
+            pointForHq = { n -> "Utabiri wa makao makuu ya $n" }, // TODO(review)
+            pointForYou = "Utabiri wa mahali ulipo (takriban)", // TODO(review)
+            pointRounded = "Mahali ulipo hukadiriwa hadi umbali wa kilomita 1 hivi kabla ya kuomba utabiri. Hapahifadhiwi.", // TODO(review)
+            pointUse = "Tumia mahali nilipo hasa", // TODO(review)
+            pointBackToHq = { n -> "Rudi kwenye utabiri wa makao makuu ya $n" }, // TODO(review)
+            pointTooFar = { n -> "Mahali ulipo ni nje ya Kaunti ya $n au mbali sana na mji wake mkuu, kwa hiyo utabiri wa kaunti unaonyeshwa." }, // TODO(review)
+            aboutPrivacyPoint = "Ukichagua \"Tumia mahali nilipo hasa\" kwenye utabiri, mahali ulipo hukadiriwa hadi kilomita 1 hivi, " +
+                "na viwianishi hivyo vilivyokadiriwa hutumwa kwa Open-Meteo badala ya vya mji wa kaunti. Hutunzwa tu unapotazama utabiri huo.", // TODO(review)
         )
 
         fun of(language: Language) = if (language == Language.SWAHILI) swahili else english

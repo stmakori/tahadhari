@@ -374,10 +374,16 @@ private fun DetailPane(state: DashboardState, explainer: AlertExplainer, modifie
         } else {
             key(county.code) {
                 Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-                    CountyDetail(
-                        county, state.states[county.code] ?: LoadState.Loading, state.language,
-                        explainer = explainer,
-                    ) { state.retry(county.code) }
+                    val loaded = state.states[county.code] ?: LoadState.Loading
+                    Column {
+                        CountyDetail(county, loaded, state.language, explainer = explainer) { state.retry(county.code) }
+                        (loaded as? LoadState.Ready)?.let { ready ->
+                            ke.tahadhari.ui.mobile.ReadAloudButton(
+                                county, ready, state.language,
+                                Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.lg),
+                            )
+                        }
+                    }
                 }
             }
         }

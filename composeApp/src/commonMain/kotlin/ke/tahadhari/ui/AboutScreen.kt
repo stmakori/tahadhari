@@ -50,6 +50,7 @@ fun AboutContent(language: Language, modifier: Modifier = Modifier) {
             Bullet(strings.aboutPrivacyNoAccounts)
             Bullet(strings.aboutPrivacyStored)
             Bullet(strings.aboutPrivacyLocation)
+            Bullet(strings.aboutPrivacyPoint)
             Bullet(strings.aboutPrivacySent)
             Bullet(strings.aboutPrivacyCheckIn)
             Bullet(strings.aboutPrivacyCrash)

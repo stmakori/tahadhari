@@ -21,6 +21,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ke.tahadhari.data.Counties
 import ke.tahadhari.data.County
+import ke.tahadhari.data.GeoPoint
+import ke.tahadhari.domain.atPoint
+import ke.tahadhari.ui.mobile.PointForecastCard
+import ke.tahadhari.ui.mobile.ReadAloudButton
+import ke.tahadhari.ui.mobile.RoundedPointSaver
 import ke.tahadhari.data.guides.SafetyGuides
 import ke.tahadhari.domain.Language
 import androidx.compose.ui.semantics.heading
@@ -190,21 +195,27 @@ private fun CountyScreen(
     onChangeCounty: () -> Unit,
 ) {
     val strings = Strings.of(language)
-    var state by remember(county.code) { mutableStateOf<LoadState>(LoadState.Loading) }
+    // Optional: the user's own point (rounded to ~1 km) instead of the county HQ. Kept in memory only.
+    var point by rememberSaveable(county.code, stateSaver = RoundedPointSaver) { mutableStateOf<GeoPoint?>(null) }
+    val shown = point?.let { county.atPoint(it) } ?: county
+    // The state resets when the point changes, so an HQ forecast is never shown under "your location".
+    var state by remember(county.code, point) { mutableStateOf<LoadState>(LoadState.Loading) }
     var attempt by remember(county.code) { mutableIntStateOf(0) }
-    var refreshing by remember(county.code) { mutableStateOf(false) }
-    LaunchedEffect(county.code, attempt) {
+    var refreshing by remember(county.code, point) { mutableStateOf(false) }
+    LaunchedEffect(county.code, point, attempt) {
         // A refresh keeps the current forecast on screen (with the pull indicator) until the new one arrives.
         if (state is LoadState.Ready) refreshing = true else state = LoadState.Loading
-        state = loadCounty(county)
+        state = loadCounty(shown)
         refreshing = false
     }
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = { if (!refreshing) attempt++ }, modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            CountyDetail(county, state, language, statusLine = statusLine ?: { DataStatusLine(it, Strings.of(language)) }) { attempt++ }
+            PointForecastCard(county, point, language, { point = it }, Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.lg))
+            CountyDetail(shown, state, language, statusLine = statusLine ?: { DataStatusLine(it, Strings.of(language)) }) { attempt++ }
             // Sharing is offered only with a forecast on screen, never after a failure.
             (state as? LoadState.Ready)?.let { ready ->
-                ShareAlertButton(county, ready, language, Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm))
+                ReadAloudButton(shown, ready, language, Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm))
+                ShareAlertButton(shown, ready, language, Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm))
             }
             // Visible alternative to pulling, for desktop, switch and screen-reader users.
             OutlinedButton(
