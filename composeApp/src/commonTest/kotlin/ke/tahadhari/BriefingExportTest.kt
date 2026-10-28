@@ -4,6 +4,8 @@ import ke.tahadhari.data.Counties
 import ke.tahadhari.data.County
 import ke.tahadhari.data.GeoPoint
 import ke.tahadhari.domain.Language
+import ke.tahadhari.domain.RiskLevel
+import ke.tahadhari.domain.Trend
 import ke.tahadhari.ui.LoadState
 import ke.tahadhari.ui.Strings
 import ke.tahadhari.ui.dashboard.BriefingExport
@@ -117,5 +119,16 @@ class BriefingExportTest {
     fun fileNameUsesNairobiDate() {
         assertEquals("tahadhari-briefing-2026-10-27.html", BriefingExport.fileName(now))
         assertEquals("tahadhari-briefing-2026-10-28.html", BriefingExport.fileName(1_793_140_200_000L))
+    }
+
+    @Test
+    fun listsCountiesRisingSinceYesterdayOnlyWhenThereAreAny() {
+        assertFalse("Rising since yesterday" in build())
+        val trends = mapOf(4 to Trend.Rising(RiskLevel.HIGH), 42 to Trend.Rising(RiskLevel.MODERATE), 47 to Trend.Falling(RiskLevel.HIGH), 1 to Trend.Rising(RiskLevel.LOW))
+        val html = BriefingExport.build(all, states, Language.ENGLISH, now, trends)
+        // Tana River is first by risk; Mombasa has no data so it is not listed.
+        assertTrue("<p class=\"rising\">Rising since yesterday: Tana River, Kisumu</p>" in html)
+        val sw = BriefingExport.build(all, states, Language.SWAHILI, now, trends)
+        assertTrue("Imepanda tangu jana: Tana River, Kisumu" in sw)
     }
 }

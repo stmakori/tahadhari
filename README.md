@@ -42,6 +42,9 @@ with clear advice on what to do.
 - Kenya county map coloured by risk (hover for details, click to select). Counties without data
   are hatched and labelled "No data", never shown as Low.
 - Summary chips per level that filter a ranked list (wettest day, 3-day total, river rise).
+- **Trend since yesterday**: an arrow and "was Moderate" on counties whose level changed, and a "Rising (n)" chip.
+  Compared with the last snapshot from an earlier day (Nairobi time); only fresh, fully loaded data is saved.
+  The CSV gets a `change_since_yesterday` column and the briefing lists the rising counties.
 - Side-by-side county detail, overall "last updated" time, EN/SW toggle, About dialog.
 - Refreshes automatically every 3 hours, keeping the current data on screen while it reloads.
 - **Export CSV** of all 47 counties, or a printable **HTML briefing** (counts, ranked table, and
