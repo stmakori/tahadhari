@@ -183,6 +183,7 @@ private fun reasonLines(a: RiskAssessment, language: Language, s: Strings): List
             is RiskReason.WetSpell -> AppIcons.Drop to s.reasonWetSpell(r.totalMm.roundToInt(), Dates.dayName(r.startDate, language))
             is RiskReason.LandslideRisk -> AppIcons.Drop to s.reasonLandslide(r.totalMm.roundToInt(), Dates.dayName(r.startDate, language))
             is RiskReason.SaturatedGround -> AppIcons.Drop to s.reasonSaturated
+            is RiskReason.UpstreamRain -> AppIcons.Waves to s.upstream.reason(r.countyName, r.totalMm.roundToInt())
             is RiskReason.RiverRising -> AppIcons.Waves to s.reasonRiver(r.riverName ?: s.nearbyRiver, r.ratio.oneDecimal())
         }
     }

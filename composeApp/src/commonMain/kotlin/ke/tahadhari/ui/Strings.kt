@@ -241,6 +241,8 @@ data class Strings(
     val pointTooFar: (county: String) -> String,
     // About page / About dialog texts, grouped so the Strings constructor stays under the JVM's 255-parameter limit.
     val aboutPage: AboutStrings,
+    // Upstream-rain texts, grouped for the same reason.
+    val upstream: UpstreamStrings,
 ) {
     companion object {
         val english = Strings(
@@ -487,6 +489,11 @@ data class Strings(
             pointUse = "Use my exact location",
             pointBackToHq = { n -> "Back to $n HQ forecast" },
             pointTooFar = { n -> "Your location is outside $n County or too far from its main town, so the county forecast is shown." },
+            upstream = UpstreamStrings(
+                reason = { c, mm -> "Heavy rain upstream in $c ($mm mm over 3 days) can raise the river within days" },
+                shareMsg = { c, mm -> "Heavy rain upstream in $c ($mm mm)" },
+                widget = { c -> "Heavy rain upstream in $c" },
+            ),
             aboutPage = AboutStrings(
                 aboutOpen = "About Tahadhari",
                 aboutTitle = "About and how it works",
@@ -798,6 +805,11 @@ data class Strings(
             pointUse = "Tumia mahali nilipo hasa", // TODO(review)
             pointBackToHq = { n -> "Rudi kwenye utabiri wa makao makuu ya $n" }, // TODO(review)
             pointTooFar = { n -> "Mahali ulipo ni nje ya Kaunti ya $n au mbali sana na mji wake mkuu, kwa hiyo utabiri wa kaunti unaonyeshwa." },
+            upstream = UpstreamStrings( // TODO(review): Swahili wording needs a fluent speaker's check.
+                reason = { c, mm -> "Mvua kubwa juu ya mto huko $c (mm $mm kwa siku 3) inaweza kuinua mto ndani ya siku chache" },
+                shareMsg = { c, mm -> "Mvua kubwa juu ya mto huko $c (mm $mm)" },
+                widget = { c -> "Mvua kubwa juu ya mto huko $c" },
+            ),
             aboutPage = AboutStrings(
                 // TODO(review): About and intro Swahili below needs a fluent speaker's check.
                 aboutOpen = "Kuhusu Tahadhari",
@@ -861,6 +873,13 @@ fun Strings.updatedText(updatedAtMillis: Long, nowMillis: Long): String =
         is DataAge.Hours -> updatedHoursAgo(age.hours)
         is DataAge.OnDate -> updatedOn(age.isoDate)
     }
+
+/** Upstream-rain texts in one language (see [Strings.upstream]). [county] is the upstream county's name. */
+data class UpstreamStrings(
+    val reason: (county: String, mm: Int) -> String,
+    val shareMsg: (county: String, mm: Int) -> String,
+    val widget: (county: String) -> String,
+)
 
 /** About texts in one language (see [Strings.aboutPage]). */
 data class AboutStrings(

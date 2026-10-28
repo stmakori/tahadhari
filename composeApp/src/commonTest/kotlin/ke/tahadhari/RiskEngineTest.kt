@@ -225,4 +225,82 @@ class RiskEngineTest {
         val river = RiverOutlook("Enkare Narok", baselineDischarge = 10.0, peakDischarge = 25.0, peakDate = "2026-10-29")
         assertEquals(RiskLevel.HIGH, soilEngine.assess(wet(0.6, 0.0, 25.0, 0.0, river = river)).level)
     }
+
+    // --- Upstream rain (downstream counties) ---
+
+    // Off by default (see RiskThresholds.upstreamRainFloor and docs/validation.md section 9): tests enable it explicitly.
+    private val upEngine = RiskEngine(RiskThresholds(upstreamRainFloor = RiskLevel.MODERATE))
+
+    private fun up(name: String, vararg mm: Double) =
+        UpstreamForecast(name, mm.mapIndexed { i, v -> DailyRain("2026-10-${27 + i}", v, null) })
+
+    private fun withUp(vararg ups: UpstreamForecast, mm: DoubleArray = doubleArrayOf(0.0, 2.0, 0.0), river: RiverOutlook? = null) =
+        forecast(*mm, river = river).copy(upstream = ups.toList())
+
+    @Test fun upstreamRainIsOffByDefault() {
+        assertNull(RiskThresholds().upstreamRainFloor)
+        val a = engine.assess(withUp(up("Murang'a", 0.0, 60.0, 0.0)))
+        assertEquals(RiskLevel.LOW, a.level)
+        assertTrue(a.reasons.none { it is RiskReason.UpstreamRain })
+    }
+
+    @Test fun heavyUpstreamRainRaisesQuietDownstreamToModerate() {
+        val a = upEngine.assess(withUp(up("Nyeri", 0.0, 3.0, 0.0), up("Murang'a", 0.0, 60.0, 0.0)))
+        assertEquals(RiskLevel.MODERATE, a.level)
+        val r = a.reasons.filterIsInstance<RiskReason.UpstreamRain>().single()
+        assertEquals("Murang'a", r.countyName)
+        assertEquals(60.0, r.totalMm)
+        assertEquals(RiskLevel.MODERATE, r.level)
+    }
+
+    @Test fun upstreamWetSpellCountsToo() {
+        // 3-day total 90 mm, no day above 50 mm: HIGH from the wet spell only.
+        val a = upEngine.assess(withUp(up("Embu", 30.0, 30.0, 30.0)))
+        assertEquals(RiskLevel.MODERATE, a.level)
+        assertEquals(90.0, a.reasons.filterIsInstance<RiskReason.UpstreamRain>().single().totalMm)
+    }
+
+    @Test fun moderateUpstreamRainDoesNotTrigger() {
+        val a = upEngine.assess(withUp(up("Meru", 0.0, 30.0, 0.0)))
+        assertEquals(RiskLevel.LOW, a.level)
+        assertTrue(a.reasons.isEmpty())
+    }
+
+    @Test fun upstreamTriggerLevelIsConfigurable() {
+        val severeOnly = RiskEngine(RiskThresholds(upstreamRainFloor = RiskLevel.HIGH, upstreamTriggerLevel = RiskLevel.SEVERE))
+        assertEquals(RiskLevel.LOW, severeOnly.assess(withUp(up("Meru", 0.0, 60.0, 0.0))).level)
+        assertEquals(RiskLevel.HIGH, severeOnly.assess(withUp(up("Meru", 0.0, 90.0, 0.0))).level)
+    }
+
+    @Test fun upstreamRainNeverLowersALevel() {
+        // Local SEVERE (90 mm day) stays SEVERE; the upstream reason does not become the top reason.
+        val a = upEngine.assess(withUp(up("Nyeri", 0.0, 60.0, 0.0), mm = doubleArrayOf(0.0, 90.0, 0.0)))
+        assertEquals(RiskLevel.SEVERE, a.level)
+        assertTrue(a.reasons.first() !is RiskReason.UpstreamRain)
+    }
+
+    @Test fun upstreamRainDoesNotRaiseAboveItsFloor() {
+        // Local MODERATE with a MODERATE floor stays MODERATE.
+        assertEquals(RiskLevel.MODERATE, upEngine.assess(withUp(up("Nyeri", 0.0, 60.0, 0.0), mm = doubleArrayOf(0.0, 25.0, 0.0))).level)
+    }
+
+    @Test fun missingUpstreamDataChangesNothing() {
+        val a = upEngine.assess(withUp().copy(upstreamUnavailable = true))
+        assertEquals(RiskLevel.LOW, a.level)
+        assertTrue(a.reasons.none { it is RiskReason.UpstreamRain })
+        assertTrue(a.upstreamUnavailable)
+        assertTrue(!upEngine.assess(withUp(up("Nyeri", 0.0, 60.0, 0.0))).upstreamUnavailable)
+    }
+
+    @Test fun upstreamRainUsesRainfallOnlyNotRiverOfUpstream() {
+        // An upstream forecast has only rain, so a dry upstream never triggers.
+        assertEquals(RiskLevel.LOW, upEngine.assess(withUp(up("Nyeri", 0.0, 0.0, 0.0))).level)
+    }
+
+    @Test fun upstreamRainDoesNotFeedSaturatedGround() {
+        val both = RiskEngine(RiskThresholds(upstreamRainFloor = RiskLevel.MODERATE, soilSaturatedM3m3 = 0.40))
+        val a = both.assess(withUp(up("Nyeri", 0.0, 60.0, 0.0)).copy(soilMoistureM3m3 = 0.6))
+        assertEquals(RiskLevel.MODERATE, a.level) // local rain is only 2 mm: soil needs local rainfall
+        assertTrue(a.reasons.none { it is RiskReason.SaturatedGround })
+    }
 }

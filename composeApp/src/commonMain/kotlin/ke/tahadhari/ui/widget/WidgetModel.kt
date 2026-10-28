@@ -16,6 +16,7 @@ sealed interface WidgetReason {
     data class WetSpell(val mm: Int) : WidgetReason
     data class Landslide(val mm: Int) : WidgetReason
     data class RiverRising(val ratio: String) : WidgetReason
+    data class Upstream(val countyName: String) : WidgetReason
     /** No signal reached Moderate. */
     data object Quiet : WidgetReason
 }
@@ -66,6 +67,7 @@ private fun reasonOf(state: LoadState.Ready): WidgetReason =
         is RiskReason.WetSpell -> WidgetReason.WetSpell(top.totalMm.roundToInt())
         is RiskReason.LandslideRisk -> WidgetReason.Landslide(top.totalMm.roundToInt())
         is RiskReason.RiverRising -> WidgetReason.RiverRising(oneDecimal(top.ratio))
+        is RiskReason.UpstreamRain -> WidgetReason.Upstream(top.countyName)
         is RiskReason.SaturatedGround -> WidgetReason.Quiet // unreachable: filtered above
         null -> state.assessment.wettestDay?.let { WidgetReason.WettestDay(it.precipitationMm.roundToInt()) }
             ?: WidgetReason.Quiet
@@ -113,6 +115,7 @@ fun WidgetUiState.toContent(strings: Strings, nowMillis: Long): WidgetContent = 
             is WidgetReason.WetSpell -> strings.threeDayShort(r.mm)
             is WidgetReason.Landslide -> strings.widgetLandslide(r.mm)
             is WidgetReason.RiverRising -> strings.widgetRiverRising(r.ratio)
+            is WidgetReason.Upstream -> strings.upstream.widget(r.countyName)
             WidgetReason.Quiet -> null
         },
         updated = strings.updatedText(updatedAtMillis, nowMillis),

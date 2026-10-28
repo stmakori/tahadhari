@@ -371,7 +371,46 @@ step that fires on a fifth of wet-season days would also teach users to ignore H
 off by default, and if it must be given a value for a demo, T = 0.40 is the least bad (about the 73rd percentile of the season, +2 hits
 for ECMWF), but I would not present it as validated. Better evidence would be one full short-rains season of the app's own live soil values against reported impacts.
 
-## 9. Limitations
+## 9. Evaluating an "upstream rain" rule
+
+**Proposal.** Section 3 found that Nyeri, Murang'a, Embu, Meru and Kirinyaga reached High or Severe in the week before the Garissa and
+Tana River floods. Per county-day: if any upstream county's **rainfall-only** level (heavy day or wet spell; not river, not landslide)
+is at least High, raise the downstream county to at least a floor (Moderate, or High). It never lowers a level. Mappings (`Counties.kt`):
+Garissa and Tana River from Nyeri, Murang'a, Embu, Meru, Kirinyaga, Tharaka-Nithi (Upper Tana catchment counties, UTaNRMP); Busia and
+Siaya from Trans Nzoia, Uasin Gishu, Bungoma, Kakamega (six-county Nzoia basin split in an MDPI study; there is no 2024 Nzoia event in the list,
+so for those two only the extra alarms can be counted). Script: `analyze_upstream.py`, on the same 47 HQs and 78 issue days (3 inputs).
+The engine's own level (river + landslide) is the starting point, so this measures what upstream rain adds to the current engine.
+
+**Events (E6 Garissa, E7 Tana River).** Under every variant and every input the level in the issue days 1 to 3 days before was already Severe,
+and the first High+ was already 6 days (the search limit) before. The river signal had been on since at least 6 days before
+(the Tana counties' river signal gives High+ on 41.9 % of all county-days). So upstream rain adds **0 new hits and no extra lead time**.
+(The upstream rain-only level in the week before was mostly Moderate; ECMWF saw High once, on 6 May, for E7. The High in section 3 includes the landslide signal.)
+
+**Extra alarms.**
+
+| Group | Variant | Moderate+ | High+ | County-days raised | of which to High+ |
+|---|---|---|---|---|---|
+| Tana (Garissa, Tana River) | off | 46.4 % | 41.9 % | 0 | 0 |
+| Tana | upstream High -> floor Moderate | 47.2 % | 41.9 % | 4 | 0 |
+| Tana | upstream High -> floor High | 47.2 % | 43.2 % | 6 | 6 |
+| Tana | upstream Moderate -> floor Moderate | 62.2 % | 41.9 % | 74 | 0 |
+| Nzoia (Busia, Siaya) | off | 40.8 % | 29.7 % | 0 | 0 |
+| Nzoia | upstream High -> floor Moderate | 43.4 % | 29.7 % | 12 | 0 |
+| Nzoia | upstream High -> floor High | 43.4 % | 32.9 % | 15 | 15 |
+
+(468 county-days per group: 2 counties x 78 days x 3 inputs.) On the Tana counties the upstream trigger fires on 11 to 13 of 78 days per
+input, but on 64 of the 70 county-days where it fires the river signal had already put the county at High or Severe; the rule changes only 4 (Moderate floor) to 6
+(High floor) county-days, and none of them is within 7 days of E6 or E7. For Nzoia it changes 12 to 15 days, with no event to credit it to.
+A looser trigger (upstream Moderate) raises 74 and 106 county-days, which is noise.
+
+**Decision: ship it disabled** (`RiskThresholds.upstreamRainFloor = null`), as with the saturated-ground signal (section 8). The evidence is that on the Tana
+the existing river signal is already on, so upstream rain adds nothing measurable; it costs a few false alarms and, for Nzoia, there is no event to test.
+The rule, the fetch, the cache and the text are in the code and tested. If the owner turns it on, a Moderate floor with a High trigger is the least costly
+setting (4 and 12 extra county-days); it is not validated. Where it might still help is a county whose own river point misses the channel
+(the old Tana points, section 4), which is a data fix rather than a reason to turn it on. Better evidence would need a season in which the river
+signal is not already on, and a documented Nzoia event.
+
+## 10. Limitations
 
 - **Seven events, one season, dates approximate.** No confidence interval worth quoting. The documented list is incomplete.
 - **Point sampling.** The app samples one point per county (the HQ); events happen at specific places inside large counties. The three event-site checks show it matters (e.g. Kitengela vs Kajiado HQ).
@@ -383,7 +422,7 @@ for ECMWF), but I would not present it as validated. Better evidence would be on
 - **Threshold scenarios are in-sample.**
 - **Sources.** Death tolls and displacement numbers differ between sources and dates; none of them are used in the scoring, only the dates and places of events.
 
-## 10. Re-running it
+## 11. Re-running it
 
 ```bash
 python -I tools/backtest/fetch.py            # about 50 API requests; cached under build/backtest-cache/ (git-ignored)
@@ -397,6 +436,7 @@ python -I tools/backtest/analyze_chance.py   # chance baseline
 python -I tools/backtest/analyze_antecedent.py
 python -I tools/backtest/analyze_rerun.py    # before/after of the river fix and the landslide signal (sections 2, 4, 5)
 python -I tools/backtest/analyze_soil.py     # saturated-ground rule (section 8)
+python -I tools/backtest/analyze_upstream.py # upstream-rain rule (section 9)
 java tools/backtest/Charts.java              # redraws docs/validation/*.png
 ```
 
@@ -405,11 +445,14 @@ network access. Without `TAHADHARI_BACKTEST=1` the test does nothing and makes n
 `fetch.py` and `probe.py` use the network). The test also runs the what-if threshold sets using the public `RiskThresholds` parameters,
 without changing the shipped defaults.
 
-## 11. Sources and attribution
+## 12. Sources and attribution
 
 - Weather and river data: [Open-Meteo](https://open-meteo.com/), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
   APIs used: Previous Runs API (ECMWF IFS 0.25 deg and NOAA GFS runs), Historical Forecast API (ECMWF IFS 0.25 deg soil moisture), Archive API (ERA5 rain and soil moisture, Copernicus Climate Change Service / ECMWF), Flood API (GloFAS, Copernicus Emergency Management Service).
   API docs: [Previous Runs](https://open-meteo.com/en/docs/previous-runs-api), [Historical Forecast](https://open-meteo.com/en/docs/historical-forecast-api).
+- Upstream counties: [Upper Tana Natural Resource Management Project](https://utanrmp.powweb.com/print/183) (Embu, Meru, Tharaka-Nithi, Nyeri, Kirinyaga, Murang'a);
+  [Kenya Times on the TARDA flood advisory](https://thekenyatimes.com/weather/tarda-issues-flood-advisory-for-19-counties-as-dam-levels-rise/) (search summary only, page blocked);
+  [MDPI, Sustainability 11(3):560](https://www.mdpi.com/2071-1050/11/3/560) (Nzoia basin counties, search summary only).
 - Events: the Star, Nation, Al Jazeera, Capital FM, Citizen Digital, People Daily, K24 and Eastleigh Voice (links in the table in section 1);
   [UN-Habitat statement on the Nairobi floods, 26 April 2024](https://new.unhabitat.org/sites/default/files/2024/04/un-habitat_statement_on_the_nairobi_floods_26.04.2024.pdf);
   [ACAPS, Kenya heavy rainfall and floods](https://www.acaps.org/en/countries/archives/detail/kenya-heavy-rainfall-and-floods);
