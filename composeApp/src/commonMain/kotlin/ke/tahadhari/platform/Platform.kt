@@ -34,3 +34,17 @@ sealed interface LocationResult {
  */
 @Composable
 expect fun rememberLocationRequester(onResult: (LocationResult) -> Unit): (() -> Unit)?
+
+/**
+ * Returns a function that makes sure the app may post notifications (asks on Android 13+) and calls
+ * [onResult] once with true (allowed) or false (blocked). Returns null where risk notifications are
+ * not offered (desktop), so callers can hide the switch.
+ */
+@Composable
+expect fun rememberNotificationRequester(onResult: (allowed: Boolean) -> Unit): (() -> Unit)?
+
+/**
+ * Called after the saved "risk alerts" setting changed, so the platform can start or stop the
+ * background refresh that checks the forecast. No-op on desktop.
+ */
+expect fun onRiskAlertsChanged(enabled: Boolean)

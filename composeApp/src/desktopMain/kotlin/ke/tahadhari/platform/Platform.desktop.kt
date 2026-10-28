@@ -22,3 +22,9 @@ actual val copiesToClipboard: Boolean = true
 /** No location on desktop: the "Use my location" button is hidden. */
 @Composable
 actual fun rememberLocationRequester(onResult: (LocationResult) -> Unit): (() -> Unit)? = null
+
+/** No notifications on desktop: the risk-alert switch is hidden. */
+@Composable
+actual fun rememberNotificationRequester(onResult: (allowed: Boolean) -> Unit): (() -> Unit)? = null
+
+actual fun onRiskAlertsChanged(enabled: Boolean) {}

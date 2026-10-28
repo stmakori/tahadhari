@@ -15,7 +15,13 @@ import androidx.compose.ui.unit.dp
 import ke.tahadhari.AppGraph
 import ke.tahadhari.data.Preferences
 import ke.tahadhari.data.UserPreferences
+import ke.tahadhari.platform.deleteCrashReport
+import ke.tahadhari.platform.installCrashHandler
+import ke.tahadhari.platform.onRiskAlertsChanged
+import ke.tahadhari.platform.readCrashReport
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Phone app entry point with saved preferences: loads the user's county and language
@@ -34,6 +40,15 @@ fun MobileRoot(
 ) {
     val prefs by produceState<UserPreferences?>(null, preferences) { value = preferences.load() }
     val scope = rememberCoroutineScope()
+    // Local crash log: install the handler (idempotent) and look for a report from the last run.
+    var crashReport by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.Default) {
+            val found = readCrashReport() // read before installing, so only an earlier run's crash shows
+            installCrashHandler()
+            found
+        }.let { crashReport = it }
+    }
     val loaded = prefs
     if (loaded == null) {
         Splash(darkTheme)
@@ -57,6 +72,15 @@ fun MobileRoot(
         initialLanguage = language,
         onCountyChange = { code -> if (code != null) scope.launch { preferences.setCounty(code) } },
         onLanguageChange = { l -> language = l; scope.launch { preferences.setLanguage(l) } },
+        riskAlertsEnabled = loaded.riskAlertsEnabled,
+        onRiskAlertsChange = { on ->
+            scope.launch {
+                preferences.setRiskAlertsEnabled(on)
+                onRiskAlertsChanged(on) // start or stop the background check
+            }
+        },
+        crashReport = crashReport,
+        onCrashReportDelete = { crashReport = null; scope.launch(Dispatchers.Default) { deleteCrashReport() } },
         darkTheme = darkTheme,
     )
 }

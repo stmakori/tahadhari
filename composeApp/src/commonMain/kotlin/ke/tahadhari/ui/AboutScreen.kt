@@ -52,6 +52,8 @@ fun AboutContent(language: Language, modifier: Modifier = Modifier) {
             Bullet(strings.aboutPrivacyLocation)
             Bullet(strings.aboutPrivacySent)
             Bullet(strings.aboutPrivacyCheckIn)
+            Bullet(strings.aboutPrivacyCrash)
+            Bullet(strings.aboutPrivacyNotify)
         }
         Disclaimer(strings)
         Column(

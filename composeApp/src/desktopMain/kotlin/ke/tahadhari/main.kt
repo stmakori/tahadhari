@@ -1,5 +1,7 @@
 package ke.tahadhari
 
+import androidx.compose.runtime.remember
+import ke.tahadhari.platform.installCrashHandler
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -20,6 +22,7 @@ import java.io.File
 
 /** Desktop dashboard. Pass `--mobile` to preview the phone UI in a phone-sized window. */
 fun main(args: Array<String>) = application {
+    remember { installCrashHandler() } // local crash.log only; covers the dashboard too
     val mobile = "--mobile" in args
     Window(
         onCloseRequest = ::exitApplication,

@@ -2,6 +2,7 @@ package ke.tahadhari.platform
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -19,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import ke.tahadhari.widget.WidgetRefresh
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -102,4 +104,28 @@ private suspend fun currentLocation(context: Context): LocationResult = withCont
     } catch (_: Exception) {
         LocationResult.Unavailable
     }
+}
+
+private fun notificationsAllowed(context: Context): Boolean =
+    context.getSystemService(NotificationManager::class.java)?.areNotificationsEnabled() ?: true
+
+@Composable
+actual fun rememberNotificationRequester(onResult: (allowed: Boolean) -> Unit): (() -> Unit)? {
+    val context = LocalContext.current
+    val callback by rememberUpdatedState(onResult)
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        callback(granted && notificationsAllowed(context))
+    }
+    return remember(context) {
+        {
+            val needsAsking = Build.VERSION.SDK_INT >= 33 &&
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            if (needsAsking) launcher.launch(Manifest.permission.POST_NOTIFICATIONS) else callback(notificationsAllowed(context))
+        }
+    }
+}
+
+actual fun onRiskAlertsChanged(enabled: Boolean) {
+    val context = AndroidPlatform.appContext ?: return
+    WidgetRefresh.syncSchedule(context, riskAlerts = enabled)
 }

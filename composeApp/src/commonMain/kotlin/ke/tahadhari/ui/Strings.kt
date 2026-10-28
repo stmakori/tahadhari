@@ -223,6 +223,30 @@ data class Strings(
     val briefingNoHighlights: String,
     val briefingPrintHint: String,
     val reasonLandslide: (mm: Int, startDay: String) -> String,
+    // --- Phone extras: share alert, rising-risk notification, local crash report ---
+    val shareAlert: String,
+    val shareMsgRainDay: (mm: Int, day: String) -> String,
+    val shareMsgRainSpell: (mm: Int, startDay: String) -> String,
+    val shareMsgRiver: (river: String, ratio: String) -> String,
+    val shareMsgEmergency: String,
+    val shareMsgDisclaimer: String,
+    val shareMsgVia: String,
+    /** [isoDate] is yyyy-MM-dd. */
+    val shareMsgSaved: (isoDate: String) -> String,
+    val riskAlertsToggle: String,
+    val riskAlertsHint: String,
+    val riskAlertsDenied: String,
+    val notifChannelName: String,
+    val notifChannelDesc: String,
+    val notifNotOfficial: String,
+    val crashTitle: String,
+    val crashBody: String,
+    val crashShare: String,
+    val crashDelete: String,
+    val aboutPrivacyCrash: String,
+    val aboutPrivacyNotify: String,
+    val riskAlertsOn: String,
+    val riskAlertsOff: String,
 ) {
     companion object {
         val english = Strings(
@@ -466,6 +490,30 @@ data class Strings(
             briefingNoHighlights = "No county has a High or Severe level in the data that loaded.",
             briefingPrintHint = "To print or save as PDF, use your browser's Print command (Ctrl+P).",
             reasonLandslide = { mm, d -> "$mm mm over 3 days from $d: landslide risk on steep slopes" },
+            shareAlert = "Share alert",
+            shareMsgRainDay = { mm, d -> "Up to $mm mm of rain on $d" },
+            shareMsgRainSpell = { mm, d -> "About $mm mm of rain over 3 days from $d" },
+            shareMsgRiver = { r, x -> "$r rising to $x×" },
+            shareMsgEmergency = "Emergency: 999 / 112, Red Cross 1199",
+            shareMsgDisclaimer = "Not an official warning — follow KMSA and county advice.",
+            shareMsgVia = "via Tahadhari",
+            shareMsgSaved = { "(saved forecast from ${Dates.shortDate(it, Language.ENGLISH)})" },
+            riskAlertsToggle = "Notify me if risk rises to High or Severe",
+            riskAlertsHint = "Checked on your phone every few hours when there is a connection. Not an official warning.",
+            riskAlertsDenied = "Notifications are blocked, so this stays off. Allow them in your phone's settings.",
+            notifChannelName = "Flood risk alerts",
+            notifChannelDesc = "A message when the flood risk for your county rises to High or Severe.",
+            notifNotOfficial = "Not an official warning.",
+            crashTitle = "Tahadhari closed unexpectedly last time.",
+            crashBody = "Share the report to help fix it? It stays on your phone unless you share it.",
+            crashShare = "Share report",
+            crashDelete = "Delete",
+            aboutPrivacyCrash = "If the app crashes, a short report (time, app version, phone model, error) is saved " +
+                "on this phone. It stays there unless you choose to share it. Nothing is sent automatically.",
+            aboutPrivacyNotify = "Optional risk notifications are worked out on this phone from the same forecast. " +
+                "No account, token or extra data is sent for them.",
+            riskAlertsOn = "On",
+            riskAlertsOff = "Off",
         )
 
         val swahili = Strings(
@@ -723,6 +771,30 @@ data class Strings(
             briefingNoHighlights = "Hakuna kaunti yenye kiwango cha hatari Kubwa au Kubwa Sana katika data iliyopakiwa.",
             briefingPrintHint = "Ili kuchapisha au kuhifadhi kama PDF, tumia amri ya Print ya kivinjari chako (Ctrl+P).",
             reasonLandslide = { mm, d -> "Milimita $mm kwa siku 3 kuanzia $d: hatari ya maporomoko ya ardhi kwenye miteremko mikali" },
+            shareAlert = "Shiriki tahadhari",
+            shareMsgRainDay = { mm, d -> "Mvua ya hadi milimita $mm siku ya $d" },
+            shareMsgRainSpell = { mm, d -> "Mvua ya takriban milimita $mm kwa siku 3 kuanzia $d" },
+            shareMsgRiver = { r, x -> "$r unapanda hadi mara $x" },
+            shareMsgEmergency = "Dharura: 999 / 112, Msalaba Mwekundu 1199",
+            shareMsgDisclaimer = "Si tahadhari rasmi — fuata ushauri wa KMSA na kaunti yako.",
+            shareMsgVia = "kupitia Tahadhari",
+            shareMsgSaved = { "(utabiri uliohifadhiwa wa ${Dates.shortDate(it, Language.SWAHILI)})" },
+            riskAlertsToggle = "Nijulishe hatari ikipanda hadi Kubwa au Kubwa Sana",
+            riskAlertsHint = "Hukaguliwa kwenye simu yako kila baada ya saa chache kukiwa na mtandao. Si tahadhari rasmi.",
+            riskAlertsDenied = "Arifa zimezuiwa, kwa hivyo hii imezimwa. Ziruhusu kwenye mipangilio ya simu yako.",
+            notifChannelName = "Tahadhari za hatari ya mafuriko",
+            notifChannelDesc = "Ujumbe hatari ya mafuriko ya kaunti yako ikipanda hadi Kubwa au Kubwa Sana.",
+            notifNotOfficial = "Si tahadhari rasmi.",
+            crashTitle = "Tahadhari ilifungwa ghafla mara ya mwisho.",
+            crashBody = "Shiriki ripoti ili kusaidia kurekebisha? Inabaki kwenye simu yako isipokuwa ukiishiriki.",
+            crashShare = "Shiriki ripoti",
+            crashDelete = "Futa",
+            aboutPrivacyCrash = "Programu ikiacha kufanya kazi, ripoti fupi (saa, toleo la programu, aina ya simu, hitilafu) " +
+                "huhifadhiwa kwenye simu hii. Hubaki hapo isipokuwa uchague kuishiriki. Hakuna kinachotumwa kiotomatiki.",
+            aboutPrivacyNotify = "Arifa za hatari (si za lazima) hukokotwa kwenye simu hii kutokana na utabiri uleule. " +
+                "Hakuna akaunti, tokeni wala data ya ziada inayotumwa kwa ajili yake.",
+            riskAlertsOn = "Imewashwa",
+            riskAlertsOff = "Imezimwa",
         )
 
         fun of(language: Language) = if (language == Language.SWAHILI) swahili else english
