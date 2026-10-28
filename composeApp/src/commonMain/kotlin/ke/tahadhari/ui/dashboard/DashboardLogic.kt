@@ -3,6 +3,8 @@ package ke.tahadhari.ui.dashboard
 import ke.tahadhari.data.County
 import ke.tahadhari.domain.Freshness
 import ke.tahadhari.domain.RiskLevel
+import ke.tahadhari.domain.Trend
+import ke.tahadhari.domain.trendFor
 import ke.tahadhari.ui.LoadState
 import ke.tahadhari.ui.levelCounts
 
@@ -11,23 +13,31 @@ sealed interface StatusFilter {
     data class Level(val level: RiskLevel) : StatusFilter
     data object Loading : StatusFilter
     data object Failed : StatusFilter
+    /** Counties whose level rose since the baseline day (not saved between runs). */
+    data object Rising : StatusFilter
 }
 
 /** Status of a county for filtering. A missing state counts as loading. */
-fun LoadState?.matches(filter: StatusFilter): Boolean = when (filter) {
+fun LoadState?.matches(filter: StatusFilter, trend: Trend = Trend.Unknown): Boolean = when (filter) {
     is StatusFilter.Level -> this is LoadState.Ready && assessment.level == filter.level
     StatusFilter.Loading -> this == null || this is LoadState.Loading
     StatusFilter.Failed -> this is LoadState.Failed
+    StatusFilter.Rising -> this is LoadState.Ready && trend is Trend.Rising
 }
 
 /** Number of counties per filter, for the summary bar. */
-fun statusCounts(counties: List<County>, states: Map<Int, LoadState>): Map<StatusFilter, Int> {
+fun statusCounts(
+    counties: List<County>,
+    states: Map<Int, LoadState>,
+    trends: Map<Int, Trend> = emptyMap(),
+): Map<StatusFilter, Int> {
     val codes = counties.map { it.code }.toSet()
     val levels = states.filterKeys { it in codes }.levelCounts()
     return RiskLevel.entries.associate<RiskLevel, StatusFilter, Int> { StatusFilter.Level(it) to (levels[it] ?: 0) } +
         mapOf(
             StatusFilter.Loading to counties.count { states[it.code].matches(StatusFilter.Loading) },
             StatusFilter.Failed to counties.count { states[it.code].matches(StatusFilter.Failed) },
+            StatusFilter.Rising to counties.count { states[it.code].matches(StatusFilter.Rising, trends[it.code] ?: Trend.Unknown) },
         )
 }
 
@@ -64,7 +74,10 @@ fun visibleCounties(
     states: Map<Int, LoadState>,
     query: String,
     filter: StatusFilter?,
-): List<County> = ranked.filter { it.matchesQuery(query) && (filter == null || states[it.code].matches(filter)) }
+    trends: Map<Int, Trend> = emptyMap(),
+): List<County> = ranked.filter {
+    it.matchesQuery(query) && (filter == null || states[it.code].matches(filter, trends[it.code] ?: Trend.Unknown))
+}
 
 /** Oldest download time across loaded counties: the honest "updated" time for the whole dashboard. */
 fun oldestUpdatedAt(states: Map<Int, LoadState>): Long? =
@@ -94,3 +107,17 @@ fun mergeReload(previous: LoadState?, incoming: LoadState, nowMillis: Long): Loa
         else -> incoming
     }
 }
+
+/** Trend per county: current level (only for counties with data) against the [baseline] snapshot. */
+fun computeTrends(counties: List<County>, states: Map<Int, LoadState>, baseline: Map<Int, RiskLevel>?): Map<Int, Trend> {
+    if (baseline == null) return emptyMap()
+    return counties.associate { c ->
+        c.code to trendFor((states[c.code] as? LoadState.Ready)?.assessment?.level, baseline[c.code])
+    }
+}
+
+/** Levels of counties whose data is fresh (live download, not the saved cache). Never includes failed or cached ones. */
+fun freshLevels(counties: List<County>, states: Map<Int, LoadState>): Map<Int, RiskLevel> =
+    counties.mapNotNull { c ->
+        (states[c.code] as? LoadState.Ready)?.takeIf { !it.fromCache }?.let { c.code to it.assessment.level }
+    }.toMap()

@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ke.tahadhari.data.County
 import ke.tahadhari.domain.RiskLevel
+import ke.tahadhari.domain.Trend
 import ke.tahadhari.ui.AppIcons
 import ke.tahadhari.ui.LoadState
 import ke.tahadhari.ui.RiskBadge
@@ -62,6 +63,13 @@ fun SummaryBar(
                 RiskMark(level, Modifier.size(18.dp))
             }
         }
+        val rising = counts[StatusFilter.Rising] ?: 0
+        if (rising > 0 || filter == StatusFilter.Rising) {
+            CountChip(strings.trendRisingShort, rising, filter == StatusFilter.Rising, strings, { onToggle(StatusFilter.Rising) },
+                description = strings.filterCount(strings.trendRisingLong, rising)) {
+                Icon(AppIcons.ArrowUpward, null, Modifier.size(18.dp))
+            }
+        }
         val loading = counts[StatusFilter.Loading] ?: 0
         if (loading > 0 || filter == StatusFilter.Loading) {
             CountChip(strings.loadingShort, loading, filter == StatusFilter.Loading, strings, { onToggle(StatusFilter.Loading) }) {
@@ -88,6 +96,7 @@ private fun CountChip(
     selected: Boolean,
     strings: Strings,
     onClick: () -> Unit,
+    description: String = strings.filterCount(label, count),
     leading: @Composable () -> Unit,
 ) {
     FilterChip(
@@ -102,7 +111,7 @@ private fun CountChip(
                 Text(count.toString(), fontWeight = FontWeight.Bold)
             }
         },
-        modifier = Modifier.heightIn(min = 40.dp).semantics { contentDescription = strings.filterCount(label, count) },
+        modifier = Modifier.heightIn(min = 40.dp).semantics { contentDescription = description },
     )
 }
 
@@ -135,6 +144,7 @@ fun RankedList(
     listState: LazyListState,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    trends: Map<Int, Trend> = emptyMap(),
 ) {
     // Rank is the position among counties with data, so it doesn't change while filtering.
     val ranks = remember(ranked, states) {
@@ -151,13 +161,13 @@ fun RankedList(
     }
     LazyColumn(modifier, state = listState, contentPadding = PaddingValues(vertical = Spacing.xs)) {
         items(rows, key = { it.code }) { county ->
-            CountyRow(county, ranks[county.code], states[county.code], county.code == selectedCode, strings) { onSelect(county.code) }
+            CountyRow(county, ranks[county.code], states[county.code], trends[county.code] ?: Trend.Unknown, county.code == selectedCode, strings) { onSelect(county.code) }
         }
     }
 }
 
 @Composable
-private fun CountyRow(county: County, rank: Int?, state: LoadState?, selected: Boolean, strings: Strings, onClick: () -> Unit) {
+private fun CountyRow(county: County, rank: Int?, state: LoadState?, trend: Trend, selected: Boolean, strings: Strings, onClick: () -> Unit) {
     val scheme = MaterialTheme.colorScheme
     val accent = when (state) {
         is LoadState.Ready -> state.assessment.level.color()
@@ -204,9 +214,25 @@ private fun CountyRow(county: County, rank: Int?, state: LoadState?, selected: B
                 color = if (state is LoadState.Failed) scheme.error else scheme.onSurfaceVariant,
                 maxLines = 2, overflow = TextOverflow.Ellipsis,
             )
+            if (state is LoadState.Ready) TrendNote(trend, strings)
         }
         Spacer(Modifier.width(Spacing.sm))
         StatusPill(state, strings)
+    }
+}
+
+/** Arrow plus "was Moderate" for counties whose level changed; nothing for same or unknown. Not colour-only. */
+@Composable
+private fun TrendNote(trend: Trend, strings: Strings) {
+    val (icon, from, description) = when (trend) {
+        is Trend.Rising -> Triple(AppIcons.ArrowUpward, trend.from, strings.trendRoseDescription(strings.risk(trend.from)))
+        is Trend.Falling -> Triple(AppIcons.ArrowDownward, trend.from, strings.trendFellDescription(strings.risk(trend.from)))
+        Trend.Same, Trend.Unknown -> return
+    }
+    Row(Modifier.clearAndSetSemantics { contentDescription = description }, verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(Spacing.xs))
+        Text(strings.trendWas(strings.risk(from)), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

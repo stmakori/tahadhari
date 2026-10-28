@@ -3,7 +3,9 @@ package ke.tahadhari
 import ke.tahadhari.data.Counties
 import ke.tahadhari.data.County
 import ke.tahadhari.data.GeoPoint
+import ke.tahadhari.domain.RiskLevel
 import ke.tahadhari.domain.RiverOutlook
+import ke.tahadhari.domain.Trend
 import ke.tahadhari.ui.LoadState
 import ke.tahadhari.ui.dashboard.CsvExport
 import kotlin.test.Test
@@ -44,7 +46,7 @@ class CsvExportTest {
         val state = readyState(county, Rain.high, RiverOutlook("Tana River", 100.0, 245.0, "2026-11-06"), now, fromCache = true)
         val row = lines(CsvExport.build(listOf(county), mapOf(4 to state), now))[2]
         assertEquals(
-            "4,Tana River,Hola,high,2026-11-05,55.0,113.0,Tana River,2.45,2026-10-27T14:05+03:00,true,ok",
+            "4,Tana River,Hola,high,2026-11-05,55.0,113.0,Tana River,2.45,2026-10-27T14:05+03:00,true,ok,unknown",
             row,
         )
     }
@@ -54,8 +56,8 @@ class CsvExportTest {
         val a = Counties.byCode(42)!!
         val b = Counties.byCode(47)!!
         val out = lines(CsvExport.build(listOf(a, b), mapOf(42 to LoadState.Failed("offline")), now))
-        assertEquals("42,Kisumu,Kisumu,,,,,Nyando River,,,,failed", out[2])
-        assertEquals("47,Nairobi,Nairobi,,,,,,,,,loading", out[3])
+        assertEquals("42,Kisumu,Kisumu,,,,,Nyando River,,,,failed,unknown", out[2])
+        assertEquals("47,Nairobi,Nairobi,,,,,,,,,loading,unknown", out[3])
     }
 
     @Test
@@ -74,5 +76,22 @@ class CsvExportTest {
         assertEquals("tahadhari-risk-2026-10-27.csv", CsvExport.fileName(now))
         // 22:30 UTC on the 27th is already the 28th in Nairobi.
         assertEquals("tahadhari-risk-2026-10-28.csv", CsvExport.fileName(1_793_140_200_000L))
+    }
+
+    @Test
+    fun changeSinceYesterdayColumnIsLastAndHasFixedValues() {
+        assertEquals("change_since_yesterday", CsvExport.columns.last())
+        assertEquals("up_from_moderate", CsvExport.trendValue(Trend.Rising(RiskLevel.MODERATE)))
+        assertEquals("down_from_high", CsvExport.trendValue(Trend.Falling(RiskLevel.HIGH)))
+        assertEquals("same", CsvExport.trendValue(Trend.Same))
+        assertEquals("unknown", CsvExport.trendValue(Trend.Unknown))
+        assertEquals("unknown", CsvExport.trendValue(null))
+        val county = Counties.byCode(4)!!
+        val state = readyState(county, Rain.high, updatedAtMillis = now)
+        val row = lines(CsvExport.build(listOf(county), mapOf(4 to state), now, mapOf(4 to Trend.Rising(RiskLevel.MODERATE))))[2]
+        assertTrue(row.endsWith(",ok,up_from_moderate"))
+        // A county without data is "unknown" even if a trend were passed.
+        val failed = lines(CsvExport.build(listOf(county), mapOf(4 to LoadState.Failed("x")), now, mapOf(4 to Trend.Rising(RiskLevel.LOW))))[2]
+        assertTrue(failed.endsWith(",failed,unknown"))
     }
 }

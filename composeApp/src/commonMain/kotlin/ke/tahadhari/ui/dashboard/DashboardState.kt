@@ -11,7 +11,11 @@ import androidx.compose.runtime.snapshots.SnapshotStateMap
 import ke.tahadhari.AppGraph
 import ke.tahadhari.data.Counties
 import ke.tahadhari.data.County
+import ke.tahadhari.data.RiskSnapshotStore
 import ke.tahadhari.domain.Language
+import ke.tahadhari.domain.RiskSnapshot
+import ke.tahadhari.domain.SnapshotHistory
+import ke.tahadhari.domain.Trend
 import ke.tahadhari.ui.LoadState
 import ke.tahadhari.ui.loadCounties
 import ke.tahadhari.ui.loadCounty
@@ -36,6 +40,7 @@ const val AUTO_REFRESH_INTERVAL_MILLIS: Long = 3L * 60 * 60 * 1000
  * @param batchLoader loads many counties with a few batched requests (used by a full [refresh]).
  * @param clock current time in epoch millis; tests pass a fake.
  * @param autoRefreshIntervalMillis delay between automatic reloads (see [autoRefreshLoop]).
+ * @param snapshotStore where the daily risk snapshots for "trend since yesterday" are kept; null (tests) keeps them in memory only.
  */
 @Stable
 class DashboardState(
@@ -46,6 +51,7 @@ class DashboardState(
     private val clock: () -> Long = { AppGraph.nowMillis() },
     private val autoRefreshIntervalMillis: Long = AUTO_REFRESH_INTERVAL_MILLIS,
     batchLoader: (suspend (List<County>) -> Map<Int, LoadState>)? = null,
+    private val snapshotStore: RiskSnapshotStore? = null,
 ) {
     // With neither loader given, the app's real ones are used (batch for refresh, single for retry).
     // A custom single-county [loader] without a [batchLoader] keeps the per-county refresh (tests).
@@ -71,10 +77,17 @@ class DashboardState(
         private set
 
     val ranked: List<County> by derivedStateOf { rankCounties(counties, states) }
-    val visible: List<County> by derivedStateOf { visibleCounties(ranked, states, query, filter) }
-    val counts: Map<StatusFilter, Int> by derivedStateOf { statusCounts(counties, states) }
+    val visible: List<County> by derivedStateOf { visibleCounties(ranked, states, query, filter, trends) }
+    val counts: Map<StatusFilter, Int> by derivedStateOf { statusCounts(counties, states, trends) }
     val doneCount: Int by derivedStateOf { counties.count { states[it.code].let { s -> s != null && s !is LoadState.Loading } } }
     val oldestUpdate: Long? by derivedStateOf { oldestUpdatedAt(states) }
+
+    /** Daily snapshots, newest first (see [SnapshotHistory]). */
+    private var history by mutableStateOf<List<RiskSnapshot>>(emptyList())
+    /** Most recent snapshot from an earlier Nairobi day, or null: then no trend is shown. */
+    private var baseline by mutableStateOf<RiskSnapshot?>(null)
+    /** Level change per county since [baseline]. Empty without a baseline. */
+    val trends: Map<Int, Trend> by derivedStateOf { computeTrends(counties, states, baseline?.levels) }
 
     /** What is saved between runs. */
     val settings: DashboardSettings
@@ -86,6 +99,27 @@ class DashboardState(
         selectedCode = settings.selectedCodeOrNull()
         filter = settings.filterOrNull()
         autoRefresh = settings.autoRefresh
+    }
+
+    /** Loads the saved snapshots (call once before the first [refresh]). */
+    suspend fun loadSnapshots() {
+        history = snapshotStore?.load().orEmpty()
+        baseline = SnapshotHistory.baseline(history, clock())
+    }
+
+    /**
+     * Saves a snapshot after a COMPLETED full reload, from counties whose data is fresh (live, not cached).
+     * Cached, stale, failed and still-loading counties are left out; nothing is saved if none is fresh.
+     */
+    private suspend fun recordSnapshot() {
+        val fresh = freshLevels(counties, states)
+        if (fresh.isEmpty()) return
+        val now = clock()
+        val stored = snapshotStore?.load() ?: history
+        val updated = SnapshotHistory.record(stored, fresh, now)
+        history = updated
+        baseline = SnapshotHistory.baseline(updated, now)
+        snapshotStore?.save(updated)
     }
 
     private var refreshJob: Job? = null
@@ -127,6 +161,7 @@ class DashboardState(
             states[county.code] = mergeReload(states[county.code], result, clock())
             refreshDone++
         }
+        recordSnapshot()
     }
 
     private suspend fun refreshOneByOne() {
@@ -142,6 +177,7 @@ class DashboardState(
                 }
             }.forEach { it.join() }
         }
+        recordSnapshot()
     }
 
     /**

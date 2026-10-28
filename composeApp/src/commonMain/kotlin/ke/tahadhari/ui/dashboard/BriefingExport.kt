@@ -5,6 +5,7 @@ import ke.tahadhari.domain.Dates
 import ke.tahadhari.domain.Language
 import ke.tahadhari.domain.RiskLevel
 import ke.tahadhari.domain.TemplateExplainer
+import ke.tahadhari.domain.Trend
 import ke.tahadhari.ui.LoadState
 import ke.tahadhari.ui.Strings
 import kotlin.math.roundToInt
@@ -24,7 +25,10 @@ object BriefingExport {
     fun fileName(nowMillis: Long): String = "tahadhari-briefing-${Dates.isoDateFromEpochMillis(nowMillis)}.html"
 
     /** [counties] in any order: rows are sorted here with [rankCounties] (highest risk first, no-data after). */
-    fun build(counties: List<County>, states: Map<Int, LoadState>, language: Language, generatedAtMillis: Long): String {
+    fun build(counties: List<County>, states: Map<Int, LoadState>, language: Language,
+        generatedAtMillis: Long,
+        trends: Map<Int, Trend> = emptyMap(),
+    ): String {
         val s = Strings.of(language)
         val ranked = rankCounties(counties, states)
         val lang = if (language == Language.SWAHILI) "sw" else "en"
@@ -62,6 +66,10 @@ object BriefingExport {
             val loading = counts[StatusFilter.Loading] ?: 0
             if (loading > 0) appendLine("<li class=\"nodata\"><span class=\"n\">$loading</span> ${escapeHtml(s.loadingShort)}</li>")
             appendLine("</ul>")
+            val rising = ranked.filter { states[it.code] is LoadState.Ready && trends[it.code] is Trend.Rising }
+            if (rising.isNotEmpty()) {
+                appendLine("<p class=\"rising\">${escapeHtml(s.briefingRisingLine(rising.joinToString(", ") { it.name }))}</p>")
+            }
             appendLine("</section>")
 
             appendLine("<section>")
@@ -195,6 +203,7 @@ tr.lvl-low,tr.lvl-moderate,tr.lvl-high,tr.lvl-severe,tr.nodata{background:none;c
 .counts li.lvl-low{border-left-color:#2e7d32}.counts li.lvl-moderate{border-left-color:#b78a00}
 .counts li.lvl-high{border-left-color:#c2410c}.counts li.lvl-severe{border-left-color:#b3261e}
 .counts li{background:#fff;color:#171d1e}
+.rising{font-weight:600;margin:.8em 0 0}
 .headline{font-weight:700;margin:.2em 0}
 .cached{color:#93000a;font-weight:600;margin:.2em 0}
 .county p{margin:.3em 0}.county ul{margin:.2em 0;padding-left:20px}

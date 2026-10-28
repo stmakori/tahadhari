@@ -35,7 +35,7 @@ data class DashboardSettings(
         fun filterKey(filter: StatusFilter?): String? = when (filter) {
             is StatusFilter.Level -> filter.level.name.lowercase()
             StatusFilter.Failed -> "failed"
-            StatusFilter.Loading, null -> null
+            StatusFilter.Loading, StatusFilter.Rising, null -> null
         }
     }
 }

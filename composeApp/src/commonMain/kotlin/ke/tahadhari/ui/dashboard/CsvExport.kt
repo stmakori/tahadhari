@@ -2,6 +2,7 @@ package ke.tahadhari.ui.dashboard
 
 import ke.tahadhari.data.County
 import ke.tahadhari.domain.Dates
+import ke.tahadhari.domain.Trend
 import ke.tahadhari.ui.LoadState
 import kotlin.math.roundToLong
 
@@ -11,12 +12,15 @@ import kotlin.math.roundToLong
  *
  * The file is a data exchange format, so column names and values are fixed English/machine
  * values (levels as `low`, `moderate`, `high`, `severe`) whatever the UI language.
+ * `change_since_yesterday` (last column) compares the level with the latest earlier-day snapshot:
+ * `up_from_<level>`, `down_from_<level>`, `same` or `unknown` (no baseline, or no data).
  * The first line is a `#` note: guidance only, not an official warning, with data attribution.
  */
 object CsvExport {
     val columns = listOf(
         "county_code", "county", "hq_town", "risk_level", "wettest_day_date", "wettest_day_mm",
         "max_3day_total_mm", "river", "river_rise_ratio", "updated_at", "from_cache", "status",
+        "change_since_yesterday",
     )
 
     const val NOTE = "Guidance only, not an official warning. Follow Kenya Meteorological Service and county " +
@@ -24,7 +28,12 @@ object CsvExport {
         "Forecast data: Open-Meteo.com (CC BY 4.0), river discharge from GloFAS."
 
     /** Rows in the order of [counties] (pass the ranked list). Counties with no state are "loading". */
-    fun build(counties: List<County>, states: Map<Int, LoadState>, generatedAtMillis: Long): String {
+    fun build(
+        counties: List<County>,
+        states: Map<Int, LoadState>,
+        generatedAtMillis: Long,
+        trends: Map<Int, Trend> = emptyMap(),
+    ): String {
         val lines = mutableListOf<String>()
         lines += row(listOf("# Tahadhari flood risk export, generated ${isoDateTime(generatedAtMillis)}. $NOTE"))
         lines += row(columns)
@@ -44,16 +53,25 @@ object CsvExport {
                             isoDateTime(s.updatedAtMillis),
                             s.fromCache.toString(),
                             "ok",
+                            trendValue(trends[c.code]),
                         )
                     }
                     // Never a level for a county without data.
                     is LoadState.Failed -> base + listOf("", "", "", "", c.riverName.orEmpty(), "",
-                        s.staleSinceMillis?.let(::isoDateTime).orEmpty(), "", "failed")
-                    else -> base + listOf("", "", "", "", c.riverName.orEmpty(), "", "", "", "loading")
+                        s.staleSinceMillis?.let(::isoDateTime).orEmpty(), "", "failed", "unknown")
+                    else -> base + listOf("", "", "", "", c.riverName.orEmpty(), "", "", "", "loading", "unknown")
                 },
             )
         }
         return lines.joinToString("\r\n", postfix = "\r\n")
+    }
+
+    /** `up_from_moderate`, `down_from_high`, `same` or `unknown`. */
+    fun trendValue(trend: Trend?): String = when (trend) {
+        is Trend.Rising -> "up_from_${trend.from.name.lowercase()}"
+        is Trend.Falling -> "down_from_${trend.from.name.lowercase()}"
+        Trend.Same -> "same"
+        Trend.Unknown, null -> "unknown"
     }
 
     /** Default file name, using the Nairobi date: `tahadhari-risk-2026-10-27.csv`. */

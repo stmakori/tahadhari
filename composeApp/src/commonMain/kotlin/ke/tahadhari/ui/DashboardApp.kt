@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ke.tahadhari.AppGraph
+import ke.tahadhari.data.RiskSnapshotStore
 import ke.tahadhari.domain.AlertExplainer
 import ke.tahadhari.domain.RiskLevel
 import ke.tahadhari.ui.dashboard.CountyMap
@@ -61,11 +62,12 @@ fun DashboardApp(
     onExport: (suspend (FileExportRequest) -> FileExportResult)? = null,
 ) {
     val scope = rememberCoroutineScope()
-    val state = remember { DashboardState(scope) }
+    val state = remember { DashboardState(scope, snapshotStore = RiskSnapshotStore(AppGraph.store)) }
     var showAbout by remember { mutableStateOf(false) }
     LaunchedEffect(state) {
         val settingsStore = DashboardSettingsStore(AppGraph.store)
         state.restore(settingsStore.load())
+        state.loadSnapshots()
         state.refresh()
         // Save whenever a remembered setting changes (the first value is what we just loaded).
         snapshotFlow { state.settings }.drop(1).collect { settingsStore.save(it) }
@@ -136,7 +138,7 @@ fun DashboardScreen(
         }
         val exportCsv = exporter { t ->
             FileExportRequest(
-                content = CsvExport.build(state.ranked, state.states, t),
+                content = CsvExport.build(state.ranked, state.states, t, state.trends),
                 suggestedFileName = CsvExport.fileName(t),
                 dialogTitle = strings.exportCsv,
                 extension = "csv",
@@ -145,7 +147,7 @@ fun DashboardScreen(
         }
         val exportBriefing = exporter { t ->
             FileExportRequest(
-                content = BriefingExport.build(state.counties, state.states, state.language, t),
+                content = BriefingExport.build(state.counties, state.states, state.language, t, state.trends),
                 suggestedFileName = BriefingExport.fileName(t),
                 dialogTitle = strings.exportBriefingDialog,
                 extension = "html",
@@ -347,6 +349,7 @@ private fun ListPane(state: DashboardState, strings: Strings, listState: LazyLis
                 rows = state.visible,
                 ranked = state.ranked,
                 states = state.states,
+                trends = state.trends,
                 selectedCode = state.selectedCode,
                 query = state.query,
                 strings = strings,
