@@ -9,6 +9,7 @@ with clear advice on what to do.
 
 - **Android**: pick your county, see the 7-day rainfall outlook, flood risk and what to do.
 - **Desktop dashboard**: see all 47 counties ranked by risk, for county disaster teams and responders.
+- **Web**: the same dashboard in a browser, with nothing to install.
 
 ![Tahadhari walkthrough: intro, county picker, Tana River in English and Swahili, safety guide, emergency, dashboard](docs/demo.gif)
 
@@ -67,6 +68,41 @@ Screenshots are rendered from sample data by `TAHADHARI_SCREENSHOTS=1 ./gradlew 
 > ⚠️ Tahadhari provides guidance based on forecast data. It is **not an official warning**.
 > Always follow the Kenya Meteorological Service and your county government.
 
+## Architecture: one codebase, four targets
+
+```mermaid
+flowchart LR
+    subgraph common["composeApp / commonMain (shared by every app target)"]
+        UI["ui: Compose Multiplatform<br/>phone screens, dashboard, map, chart"]
+        AI["ai: AiExplainer<br/>12 s timeout, template fallback"]
+        DATA["data: Open-Meteo client (batched),<br/>offline cache, preferences, guides"]
+        DOMAIN["domain: RiskEngine, explanations,<br/>freshness, alerts (pure Kotlin)"]
+        UI --> AI --> DOMAIN
+        UI --> DATA --> DOMAIN
+    end
+    SHARED["shared: AI contract + prompt<br/>(ExplainRequest, PromptBuilder)"]
+    AI --> SHARED
+    ANDROID["Android<br/>widget, WorkManager, notifications,<br/>location, dialer, share sheet"] --> common
+    DESKTOP["Desktop (JVM)<br/>window, file dialogs, crash log"] --> common
+    WEB["Web (Wasm)<br/>localStorage, clipboard, downloads"] --> common
+    SERVER["Ktor server<br/>holds the API key, rate limit, cache"] --> SHARED
+    SERVER -.->|Claude| LLM[(Anthropic API)]
+    DATA -.-> OM[(Open-Meteo forecast + GloFAS flood APIs)]
+```
+
+How much of each app is shared code (non-blank Kotlin lines, excluding generated map data):
+
+| Target | Shared (`commonMain`) | Platform-specific | Platform code is… |
+|---|---|---|---|
+| Android | **92%** | 582 lines | widget, background refresh, notifications, location, dialer, share sheet |
+| Desktop | **98%** | 162 lines | window, native save dialog, file store, crash log |
+| Web | **99%** | 85 lines | `localStorage`, clipboard, file download |
+
+The app and the Ktor server also share the AI contract and prompt in the `shared` module, so the
+request the app sends and the reply the server checks can't drift apart. `domain` is pure Kotlin,
+with no Compose, Ktor or platform code. It is covered by the `commonTest` unit tests, which run on
+every target.
+
 ## Run it
 
 Requirements: JDK 17+, Android Studio (Ladybug or newer) with the Kotlin Multiplatform plugin,
@@ -82,7 +118,15 @@ the JDK so it picks up the variable.
 ./gradlew :composeApp:assembleDebug              # APK in composeApp/build/outputs/apk/debug/
 ./gradlew :composeApp:allTests :shared:jvmTest :server:test   # all tests
 ./gradlew :composeApp:packageDistributionForCurrentOS          # desktop installer (MSI/DMG/DEB)
+./gradlew :composeApp:wasmJsBrowserDevelopmentRun              # web dashboard in your browser
+./gradlew :composeApp:wasmJsBrowserDistribution                # static web build for hosting
 ```
+
+**Web version.** The dashboard also runs in the browser (Kotlin/Wasm; needs a recent Chrome,
+Firefox, Edge or Safari). Add `?mobile` to the URL for the phone layout. On the web, explanations
+use the offline text and numbers are copied to the clipboard instead of dialled.
+`.github/workflows/pages.yml` publishes it to GitHub Pages on every push to `main`. In the repo
+settings, set **Pages → Source** to **GitHub Actions**.
 
 ### Try the key features
 

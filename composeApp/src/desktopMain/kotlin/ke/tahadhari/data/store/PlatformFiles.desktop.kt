@@ -34,3 +34,5 @@ internal actual fun moveReplacing(from: String, to: String) {
 internal actual fun deleteIfExists(path: String) {
     File(path).delete()
 }
+
+internal actual val storageDispatcher: kotlinx.coroutines.CoroutineDispatcher = kotlinx.coroutines.Dispatchers.IO

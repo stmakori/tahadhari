@@ -16,3 +16,6 @@ internal expect fun writeTextFile(path: String, text: String)
 internal expect fun moveReplacing(from: String, to: String)
 
 internal expect fun deleteIfExists(path: String)
+
+/** Dispatcher for file I/O: Dispatchers.IO on Android and desktop; the browser has no blocking I/O. */
+internal expect val storageDispatcher: kotlinx.coroutines.CoroutineDispatcher
