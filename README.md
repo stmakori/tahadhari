@@ -39,6 +39,11 @@ with clear advice on what to do.
   than Low when the forecast can't be loaded).
 - Optional **notification when your county rises to High or Severe** (off by default, once per
   rise, never from saved or failed data).
+- **Counties I watch**: follow up to 3 other counties (for family elsewhere) under your own county on
+  the Alerts screen. Each row shows the level, the main reason and when it was updated, or a
+  retry (never a level) when it can't load. Tap a row for its full forecast. With risk notifications
+  on, watched counties notify too (once per rise per county, never from saved or failed data).
+  Watched counties are fetched together in 1 rainfall call plus at most 1 river call, on refresh.
 - Crash reports stay on the phone in a local file; you choose whether to share one.
 - First-launch intro, an **About / How it works** page (risk thresholds, data sources, privacy),
   and pull-to-refresh.
@@ -152,7 +157,10 @@ settings, set **Pages → Source** to **GitHub Actions**.
    **Back to ... HQ forecast** to switch back.
 5. **Widget**: on Android, choose a county in the app, then long-press the home screen →
    Widgets → Tahadhari.
-6. **Screenshots** of every screen with sample data (no network needed):
+6. **Counties I watch**: on the Alerts screen scroll to **Counties I watch**, press **Add a county**,
+   pick one, then tap its row to open the forecast and press Back to return. Turn off your network
+   and pull to refresh to see saved data with its date; remove a county with the **x** on its row.
+7. **Screenshots** of every screen with sample data (no network needed):
    `TAHADHARI_SCREENSHOTS=1 ./gradlew :composeApp:desktopTest`, output in `composeApp/build/screenshots/`.
 
 ### Release builds

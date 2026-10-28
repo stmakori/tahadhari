@@ -28,18 +28,29 @@ import ke.tahadhari.ui.*
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun CountyPickerScreen(strings: Strings, onPick: (County) -> Unit, modifier: Modifier = Modifier) {
+fun CountyPickerScreen(
+    strings: Strings,
+    onPick: (County) -> Unit,
+    modifier: Modifier = Modifier,
+    /** False when picking a county to watch: no welcome banner and no GPS suggestion. */
+    showWelcome: Boolean = true,
+    /** Counties not offered (the user's own, and ones already watched). */
+    excluded: Set<Int> = emptySet(),
+    header: (@Composable () -> Unit)? = null,
+) {
     var query by rememberSaveable { mutableStateOf("") }
     val q = query.trim()
-    val filtered = remember(q) {
+    val filtered = remember(q, excluded) {
         Counties.all
+            .filter { it.code !in excluded }
             .filter { q.isEmpty() || it.name.contains(q, ignoreCase = true) || it.town.contains(q, ignoreCase = true) }
             .sortedBy { it.name }
     }
     val groups = remember(filtered) { filtered.groupBy { it.name.first().uppercaseChar() } }
 
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = Spacing.xl)) {
-        item(key = "welcome") { WelcomeBanner(strings, Modifier.padding(Spacing.lg)) }
+        if (showWelcome) item(key = "welcome") { WelcomeBanner(strings, Modifier.padding(Spacing.lg)) }
+        else if (header != null) item(key = "header") { header() }
         item(key = "search") {
             OutlinedTextField(
                 value = query,
@@ -55,7 +66,7 @@ fun CountyPickerScreen(strings: Strings, onPick: (County) -> Unit, modifier: Mod
             )
         }
         // Renders nothing on platforms without location (desktop).
-        item(key = "location") {
+        if (showWelcome) item(key = "location") {
             LocationCard(strings, onPick, Modifier.padding(start = Spacing.lg, end = Spacing.lg, top = Spacing.md))
         }
         if (filtered.isEmpty()) {

@@ -241,6 +241,8 @@ data class Strings(
     val pointTooFar: (county: String) -> String,
     // About page / About dialog texts, grouped so the Strings constructor stays under the JVM's 255-parameter limit.
     val aboutPage: AboutStrings,
+    /** "Counties I watch" texts (own class: the constructor is near the JVM parameter limit). */
+    val watch: WatchStrings,
 ) {
     companion object {
         val english = Strings(
@@ -487,6 +489,7 @@ data class Strings(
             pointUse = "Use my exact location",
             pointBackToHq = { n -> "Back to $n HQ forecast" },
             pointTooFar = { n -> "Your location is outside $n County or too far from its main town, so the county forecast is shown." },
+            watch = WatchStrings.english,
             aboutPage = AboutStrings(
                 aboutOpen = "About Tahadhari",
                 aboutTitle = "About and how it works",
@@ -798,6 +801,7 @@ data class Strings(
             pointUse = "Tumia mahali nilipo hasa", // TODO(review)
             pointBackToHq = { n -> "Rudi kwenye utabiri wa makao makuu ya $n" }, // TODO(review)
             pointTooFar = { n -> "Mahali ulipo ni nje ya Kaunti ya $n au mbali sana na mji wake mkuu, kwa hiyo utabiri wa kaunti unaonyeshwa." },
+            watch = WatchStrings.swahili,
             aboutPage = AboutStrings(
                 // TODO(review): About and intro Swahili below needs a fluent speaker's check.
                 aboutOpen = "Kuhusu Tahadhari",

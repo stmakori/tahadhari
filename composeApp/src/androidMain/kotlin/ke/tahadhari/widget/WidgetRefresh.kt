@@ -19,6 +19,7 @@ import ke.tahadhari.notify.RiskNotifier
 import ke.tahadhari.ui.mobile.RiskAlertState
 import ke.tahadhari.platform.AndroidPlatform
 import ke.tahadhari.ui.LoadState
+import ke.tahadhari.ui.loadCounties
 import ke.tahadhari.ui.loadCounty
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -135,7 +136,12 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) : Coroutin
             val loaded = loadCounty(county)
             WidgetStatus.setLastFailed(context, loaded is LoadState.Failed)
             // Cached or failed data never notifies (decided in checkRiskAlert).
-            if (prefs.riskAlertsEnabled) RiskNotifier.checkAndNotify(context, county, loaded, prefs.language)
+            if (prefs.riskAlertsEnabled) {
+                // Watched counties: one batched fetch (1 rainfall + at most 1 river call), only when alerts are on.
+                val watched = prefs.watchCodes.mapNotNull { Counties.byCode(it) }
+                val watchedLoaded = if (watched.isEmpty()) emptyMap() else loadCounties(watched)
+                RiskNotifier.checkAndNotify(context, listOf(county) + watched, watchedLoaded + (county.code to loaded), prefs.language)
+            }
         }
         TahadhariWidget().updateAll(context)
         return Result.success()

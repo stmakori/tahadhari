@@ -71,6 +71,8 @@ fun MobileRoot(
         initialCountyCode = loaded.countyCode,
         initialLanguage = language,
         onCountyChange = { code -> if (code != null) scope.launch { preferences.setCounty(code) } },
+        initialWatchCodes = loaded.watchCodes,
+        onWatchChange = { list -> scope.launch { preferences.setWatchCodes(list) } },
         onLanguageChange = { l -> language = l; scope.launch { preferences.setLanguage(l) } },
         riskAlertsEnabled = loaded.riskAlertsEnabled,
         onRiskAlertsChange = { on ->
