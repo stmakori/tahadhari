@@ -1,5 +1,6 @@
 package ke.tahadhari.ui
 
+import androidx.compose.ui.platform.testTag
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -168,7 +169,7 @@ fun LoadingSkeleton(strings: Strings, modifier: Modifier = Modifier) {
  */
 @Composable
 fun ErrorState(strings: Strings, onRetry: () -> Unit, modifier: Modifier = Modifier, message: String = strings.failed) {
-    Surface(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.errorContainer) {
+    Surface(modifier.fillMaxWidth().testTag("error_state"), shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.errorContainer) {
         Column(Modifier.padding(Spacing.xl), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
             Icon(AppIcons.CloudOff, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onErrorContainer)
             Text(

@@ -1,5 +1,6 @@
 package ke.tahadhari.ui.mobile
 
+import androidx.compose.ui.platform.testTag
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
@@ -77,7 +78,7 @@ private fun GuideRow(guide: SafetyGuide, strings: Strings, language: Language, o
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().testTag("guide_row_${guide.id}"),
     ) {
         Row(Modifier.padding(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
             IconBubble(guide.topic.icon(), container, onContainer)
@@ -104,7 +105,7 @@ private fun GuideDetail(guide: SafetyGuide, strings: Strings, language: Language
     // First section open by default; the rest open on tap. Survives language switches (same indices).
     val expanded = remember(guide.id) { mutableStateListOf(*Array(content.sections.size) { it == 0 }) }
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Spacing.lg),
+        modifier.testTag("guide_detail").fillMaxSize().verticalScroll(rememberScrollState()).padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         GuideHeader(guide, strings, language, ticks)

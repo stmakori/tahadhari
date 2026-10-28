@@ -12,6 +12,8 @@ kotlinx-serialization = "1.9.0"
 androidx-activity = "1.10.1"
 androidx-glance = "1.1.1"
 androidx-work = "2.10.0"
+androidx-compose-ui-test = "1.9.0"
+androidx-test-runner = "1.6.2"
 logback = "1.5.18"
 android-compileSdk = "35"
 android-targetSdk = "35"
@@ -39,6 +41,9 @@ androidx-activity-compose = { module = "androidx.activity:activity-compose", ver
 compose-ui-backhandler = { module = "org.jetbrains.compose.ui:ui-backhandler", version.ref = "compose-multiplatform" }
 androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "androidx-glance" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work" }
+androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx-compose-ui-test" }
+androidx-compose-ui-test-manifest = { module = "androidx.compose.ui:ui-test-manifest", version.ref = "androidx-compose-ui-test" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }

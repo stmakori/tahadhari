@@ -1,5 +1,6 @@
 package ke.tahadhari.ui
 
+import androidx.compose.ui.platform.testTag
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -153,6 +154,7 @@ fun MobileApp(
 @Composable
 private fun RowScope.TabItem(current: MobileTab, tab: MobileTab, icon: ImageVector, label: String, onSelect: (MobileTab) -> Unit) {
     NavigationBarItem(
+        modifier = Modifier.testTag("tab_${tab.name.lowercase()}"),
         selected = current == tab,
         onClick = { onSelect(tab) },
         icon = { Icon(icon, null) },

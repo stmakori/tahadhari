@@ -1,5 +1,6 @@
 package ke.tahadhari.ui.mobile
 
+import androidx.compose.ui.platform.testTag
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -41,7 +42,7 @@ fun EmergencyScreen(
 ) {
     var copied by remember { mutableStateOf<String?>(null) }
     Column(
-        modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Spacing.lg),
+        modifier.testTag("emergency_screen").fillMaxSize().verticalScroll(rememberScrollState()).padding(Spacing.lg),
         verticalArrangement = Arrangement.spacedBy(Spacing.md),
     ) {
         ScreenIntro(AppIcons.Phone, strings.emergencyTitle, strings.emergencyBody, Modifier.padding(horizontal = Spacing.xs, vertical = Spacing.sm))

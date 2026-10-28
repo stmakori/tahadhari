@@ -1,5 +1,6 @@
 package ke.tahadhari.ui
 
+import androidx.compose.ui.platform.testTag
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -113,7 +114,7 @@ fun RiskHeroCard(county: County, assessment: RiskAssessment, language: Language,
     val strings = Strings.of(language)
     val level = assessment.level
     val c = level.colors()
-    Surface(modifier.fillMaxWidth(), shape = MaterialTheme.shapes.extraLarge, color = c.container, contentColor = c.onContainer) {
+    Surface(modifier.fillMaxWidth().testTag("risk_card"), shape = MaterialTheme.shapes.extraLarge, color = c.container, contentColor = c.onContainer) {
         Column(
             Modifier
                 .drawBehind { drawWaves(c.fill.copy(alpha = 0.16f), bandHeight = 26.dp.toPx()) }

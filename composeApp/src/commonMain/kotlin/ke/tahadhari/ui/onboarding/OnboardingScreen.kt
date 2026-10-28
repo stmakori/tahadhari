@@ -1,5 +1,6 @@
 package ke.tahadhari.ui.onboarding
 
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -56,7 +57,7 @@ fun OnboardingScreen(
             ) {
                 LanguageToggle(language, onLanguage)
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = onFinish, modifier = Modifier.heightIn(min = Spacing.touch)) { Text(strings.onboardSkip) }
+                TextButton(onClick = onFinish, modifier = Modifier.heightIn(min = Spacing.touch).testTag("onboarding_skip")) { Text(strings.onboardSkip) }
             }
             HorizontalPager(pager, Modifier.weight(1f).fillMaxWidth()) { page ->
                 when (page) {

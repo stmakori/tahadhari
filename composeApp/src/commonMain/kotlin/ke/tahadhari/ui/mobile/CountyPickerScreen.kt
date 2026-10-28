@@ -1,5 +1,6 @@
 package ke.tahadhari.ui.mobile
 
+import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,7 +51,7 @@ fun CountyPickerScreen(strings: Strings, onPick: (County) -> Unit, modifier: Mod
                 } else null,
                 singleLine = true,
                 shape = MaterialTheme.shapes.extraLarge,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg).testTag("county_search"),
             )
         }
         // Renders nothing on platforms without location (desktop).
@@ -115,6 +116,7 @@ private fun CountyRow(county: County, strings: Strings, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
+            .testTag("county_row_${county.code}")
             .heightIn(min = 64.dp)
             .clickable(onClick = onClick)
             .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
