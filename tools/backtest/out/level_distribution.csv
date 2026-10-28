@@ -1,0 +1,10 @@
+scenario,source,low,moderate,high,severe
+default,ecmwf_ifs025,2746,773,67,80
+default,gfs_seamless,2605,752,162,147
+default,era5,2730,759,90,87
+rain_lower,ecmwf_ifs025,2175,1197,211,83
+rain_lower,gfs_seamless,2170,954,350,192
+rain_lower,era5,2262,1096,209,99
+rain_lower_river_x3,ecmwf_ifs025,2185,1224,203,54
+rain_lower_river_x3,gfs_seamless,2182,975,341,168
+rain_lower_river_x3,era5,2280,1120,196,70
