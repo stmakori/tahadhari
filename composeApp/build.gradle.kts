@@ -42,6 +42,10 @@ kotlin {
             implementation(libs.androidx.glance.appwidget)
             implementation(libs.androidx.work.runtime.ktx)
         }
+        androidInstrumentedTest.dependencies {
+            implementation(libs.androidx.compose.ui.test.junit4)
+            implementation(libs.androidx.test.runner)
+        }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
@@ -93,6 +97,7 @@ android {
         versionCode = libs.versions.app.versionCode.get().toInt()
         versionName = libs.versions.app.version.get()
         buildConfigField("String", "PROXY_URL", "\"$proxyUrl\"")
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { buildConfig = true }
     packaging {
@@ -126,6 +131,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+}
+
+dependencies {
+    // Lets the Compose UI test rule launch an activity (instrumented tests only).
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
 
 compose.desktop {
