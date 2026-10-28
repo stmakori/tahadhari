@@ -32,6 +32,11 @@ data class RiskThresholds(
     val threeDaySevereMm: Double = 120.0,
     val riverHighRatio: Double = 2.0,
     val riverSevereRatio: Double = 3.0,
+    /**
+     * Ignore the river signal when the recent baseline is below this (m³/s): a grid cell that misses
+     * the channel shows huge, meaningless ratios (see docs/validation.md, Tana River and Garissa).
+     */
+    val riverMinBaselineM3s: Double = 5.0,
     /** Wettest 3-day total at which a landslide-prone county is at least High / Severe. */
     val landslideHighMm: Double = 50.0,
     val landslideSevereMm: Double = 100.0,
@@ -69,7 +74,7 @@ class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
             if (level != null && start != null) reasons += RiskReason.LandslideRisk(start, bestTotal, level)
         }
 
-        forecast.river?.let { river ->
+        forecast.river?.takeIf { it.baselineDischarge >= t.riverMinBaselineM3s }?.let { river ->
             val level = when {
                 river.riseRatio >= t.riverSevereRatio -> RiskLevel.SEVERE
                 river.riseRatio >= t.riverHighRatio -> RiskLevel.HIGH
@@ -83,7 +88,8 @@ class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
             reasons = reasons.sortedByDescending { it.level },
             wettestDay = wettest,
             maxThreeDayTotalMm = bestTotal,
-            river = forecast.river,
+            // Below the baseline floor the ratio is meaningless, so don't show it either.
+            river = forecast.river?.takeIf { it.baselineDischarge >= t.riverMinBaselineM3s },
         )
     }
 

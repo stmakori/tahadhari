@@ -30,11 +30,13 @@ object Counties {
         c(1, "Mombasa", "Mombasa", -4.0435, 39.6682),
         c(2, "Kwale", "Kwale", -4.1737, 39.4521),
         c(3, "Kilifi", "Kilifi", -3.6305, 39.8499),
-        c(4, "Tana River", "Hola", -1.4990, 40.0300, "Tana River", -2.2706, 40.1167, listOf("Garsen", "Tana Delta")),
+        // River points are GloFAS 0.05° cells checked to carry the river (flood API, Mar-May 2024 mean
+        // discharge): Tana -2.325,40.175 = 716 m³/s; the old -2.27,40.12 cell was dry (0.1 m³/s).
+        c(4, "Tana River", "Hola", -1.4990, 40.0300, "Tana River", -2.3250, 40.1750, listOf("Garsen", "Tana Delta")),
         c(5, "Lamu", "Lamu", -2.2717, 40.9020),
         // Landslide source: Taita Hills: Kenya News Agency and People Daily reports of fatal landslides at Mwatate (Kighombo, Mwasere) and Wundanyi (Mwakale)
         c(6, "Taita-Taveta", "Wundanyi", -3.3961, 38.3569, landslideAreas = listOf("Mwatate", "Wundanyi")),
-        c(7, "Garissa", "Garissa", -0.4532, 39.6461, "Tana River", -0.4532, 39.6461, listOf("Garissa town riverside")),
+        c(7, "Garissa", "Garissa", -0.4532, 39.6461, "Tana River", -0.5250, 39.5750, listOf("Garissa town riverside")),
         c(8, "Wajir", "Wajir", 1.7471, 40.0573),
         c(9, "Mandera", "Mandera", 3.9373, 41.8569),
         c(10, "Marsabit", "Marsabit", 2.3346, 37.9899),
@@ -77,8 +79,8 @@ object Counties {
         // Landslide source: Kenyatta University study of Chetambe Hills landslide susceptibility (Webuye); Kenya-side Mt Elgon slopes are NOT yet verified
         c(39, "Bungoma", "Bungoma", 0.5635, 34.5606, landslideAreas = listOf("Chetambe Hills (Webuye)")),
         c(40, "Busia", "Busia", 0.4608, 34.1115, "Nzoia River", 0.1353, 34.0217, listOf("Budalangi")),
-        c(41, "Siaya", "Siaya", 0.0612, 34.2881, "Nzoia River", 0.0700, 34.0900, listOf("Lower Nzoia", "Yala Swamp")),
-        c(42, "Kisumu", "Kisumu", -0.0917, 34.7680, "Nyando River", -0.1739, 34.9186, listOf("Nyando", "Ahero", "Kano Plains")),
+        c(41, "Siaya", "Siaya", 0.0612, 34.2881, "Nzoia River", 0.1250, 34.0250, listOf("Lower Nzoia", "Yala Swamp")),
+        c(42, "Kisumu", "Kisumu", -0.0917, 34.7680, "Nyando River", -0.1750, 34.8750, listOf("Nyando", "Ahero", "Kano Plains")),
         c(43, "Homa Bay", "Homa Bay", -0.5273, 34.4571),
         c(44, "Migori", "Migori", -1.0634, 34.4731),
         c(45, "Kisii", "Kisii", -0.6817, 34.7680),

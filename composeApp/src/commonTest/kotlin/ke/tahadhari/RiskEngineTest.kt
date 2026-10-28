@@ -42,6 +42,26 @@ class RiskEngineTest {
         assertTrue(a.reasons.first() is RiskReason.RiverRising)
     }
 
+    @Test fun riverOnNearlyDryCellIsIgnored() {
+        // A grid cell that misses the channel: 0.05 -> 1.7 m³/s is a 34x "rise" but means nothing.
+        val river = RiverOutlook("Tana River", baselineDischarge = 0.05, peakDischarge = 1.7, peakDate = "2026-10-29")
+        val a = engine.assess(forecast(5.0, 5.0, 5.0, river = river))
+        assertEquals(RiskLevel.LOW, a.level)
+        assertTrue(a.reasons.none { it is RiskReason.RiverRising })
+    }
+
+    @Test fun riverAtMinimumBaselineStillCounts() {
+        val t = RiskThresholds()
+        val river = RiverOutlook("Nzoia", baselineDischarge = t.riverMinBaselineM3s, peakDischarge = t.riverMinBaselineM3s * 3, peakDate = "2026-10-29")
+        assertEquals(RiskLevel.SEVERE, engine.assess(forecast(5.0, 5.0, 5.0, river = river)).level)
+        val below = river.copy(baselineDischarge = t.riverMinBaselineM3s - 0.1, peakDischarge = t.riverMinBaselineM3s * 3)
+        assertEquals(RiskLevel.LOW, engine.assess(forecast(5.0, 5.0, 5.0, river = below)).level)
+    }
+
+    @Test fun everyRiverPointHasADefinedRiverName() {
+        Counties.all.filter { it.riverPoint != null }.forEach { assertTrue(it.riverName != null, it.name) }
+    }
+
     @Test fun riverOutlookUsesPastDaysAsBaseline() {
         val o = RiverOutlook.fromSeries(
             "Nzoia",
