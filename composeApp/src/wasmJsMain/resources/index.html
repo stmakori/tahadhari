@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tahadhari - Kenya flood risk dashboard</title>
+    <style>
+        html, body { margin: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
+        #loading { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; color: #444; }
+        canvas ~ #loading { display: none; }
+    </style>
+    <script src="tahadhari.js"></script>
+</head>
+<body>
+<div id="loading">Loading Tahadhari... (several MB on the first visit)</div>
+<noscript>Tahadhari needs JavaScript and WebAssembly. Please enable JavaScript or use a current Chrome, Edge, Firefox or Safari.</noscript>
+</body>
+</html>

@@ -16,6 +16,17 @@ kotlin {
     }
     jvm("desktop")
 
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalWasmDsl::class)
+    wasmJs {
+        outputModuleName.set("tahadhari")
+        browser {
+            commonWebpackConfig { outputFileName = "tahadhari.js" }
+            // Browser tests need a headless Chrome, which dev and CI machines may not have.
+            testTask { enabled = false }
+        }
+        binaries.executable()
+    }
+
     sourceSets {
         val desktopMain by getting
 
@@ -41,6 +52,9 @@ kotlin {
             implementation(libs.ktor.client.okhttp)
             implementation(libs.androidx.glance.appwidget)
             implementation(libs.androidx.work.runtime.ktx)
+        }
+        wasmJsMain.dependencies {
+            implementation(libs.ktor.client.js)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)

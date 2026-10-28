@@ -3,7 +3,6 @@ package ke.tahadhari.data.store
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -36,7 +35,7 @@ class InMemoryKeyValueStore : KeyValueStore {
  */
 class FileKeyValueStore(
     private val directory: String,
-    private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val io: CoroutineDispatcher = Dispatchers.Default,
 ) : KeyValueStore {
     private val writeLock = Mutex()
 
