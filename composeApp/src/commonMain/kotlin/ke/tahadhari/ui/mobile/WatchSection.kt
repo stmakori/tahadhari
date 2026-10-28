@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -127,40 +128,48 @@ private fun WatchRow(
             strings.updatedText(state.updatedAtMillis, now), state.fromCache,
         )
     }
+    // With large text there is no room beside the name: the badge and Retry go under it.
+    val stacked = LocalDensity.current.fontScale > 1.15f
     Surface(shape = MaterialTheme.shapes.medium, color = scheme.surfaceContainer, modifier = Modifier.fillMaxWidth().testTag("watch_row_${county.code}")) {
-        Row(Modifier.padding(start = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
-            // The tappable part is one merged element with a full description (name + level + reason + age).
-            Row(
-                Modifier.weight(1f).heightIn(min = 64.dp)
-                    .clickable(enabled = state is LoadState.Ready, role = Role.Button, onClick = onOpen)
-                    .padding(vertical = Spacing.sm)
-                    .clearAndSetSemantics { contentDescription = description; if (state is LoadState.Ready) role = Role.Button },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(name, style = MaterialTheme.typography.titleSmall)
-                    when (state) {
-                        LoadState.Loading -> Text(w.loadingRow, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
-                        is LoadState.Failed -> Text(w.failedRow, style = MaterialTheme.typography.bodySmall, color = scheme.error)
-                        is LoadState.Ready -> {
-                            Text(mainReasonText(state.assessment, language, strings), style = MaterialTheme.typography.bodySmall)
-                            val updated = strings.updatedText(state.updatedAtMillis, now)
-                            Text(
-                                if (state.fromCache) "${w.savedRow}. $updated" else updated,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (state.fromCache) scheme.error else scheme.onSurfaceVariant,
-                            )
+        Column {
+            Row(Modifier.padding(start = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
+                // The tappable part is one merged element with a full description (name + level + reason + age).
+                Row(
+                    Modifier.weight(1f).heightIn(min = 64.dp)
+                        .clickable(enabled = state is LoadState.Ready, role = Role.Button, onClick = onOpen)
+                        .padding(vertical = Spacing.sm)
+                        .clearAndSetSemantics { contentDescription = description; if (state is LoadState.Ready) role = Role.Button },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(name, style = MaterialTheme.typography.titleSmall)
+                        if (stacked && state is LoadState.Ready) RiskBadge(state.assessment.level, strings, Modifier.padding(vertical = Spacing.xs))
+                        when (state) {
+                            LoadState.Loading -> Text(w.loadingRow, style = MaterialTheme.typography.bodySmall, color = scheme.onSurfaceVariant)
+                            is LoadState.Failed -> Text(w.failedRow, style = MaterialTheme.typography.bodySmall, color = scheme.error)
+                            is LoadState.Ready -> {
+                                Text(mainReasonText(state.assessment, language, strings), style = MaterialTheme.typography.bodySmall)
+                                val updated = strings.updatedText(state.updatedAtMillis, now)
+                                Text(
+                                    if (state.fromCache) "${w.savedRow}. $updated" else updated,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (state.fromCache) scheme.error else scheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
+                    if (state is LoadState.Ready) {
+                        Spacer(Modifier.width(Spacing.sm))
+                        if (!stacked) RiskBadge(state.assessment.level, strings)
+                        Icon(AppIcons.ChevronRight, null, tint = scheme.onSurfaceVariant)
+                    }
                 }
-                if (state is LoadState.Ready) {
-                    Spacer(Modifier.width(Spacing.sm))
-                    RiskBadge(state.assessment.level, strings)
-                    Icon(AppIcons.ChevronRight, null, tint = scheme.onSurfaceVariant)
-                }
+                if (state is LoadState.Failed && !stacked) TextButton(onClick = onRetry) { Text(strings.retry) }
+                IconButton(onClick = onRemove) { Icon(AppIcons.Close, w.remove(name)) }
             }
-            if (state is LoadState.Failed) TextButton(onClick = onRetry) { Text(strings.retry) }
-            IconButton(onClick = onRemove) { Icon(AppIcons.Close, w.remove(name)) }
+            if (state is LoadState.Failed && stacked) {
+                TextButton(onClick = onRetry, modifier = Modifier.padding(start = Spacing.sm, bottom = Spacing.xs)) { Text(strings.retry) }
+            }
         }
     }
 }

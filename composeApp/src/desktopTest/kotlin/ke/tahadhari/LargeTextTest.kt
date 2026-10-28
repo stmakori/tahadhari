@@ -21,6 +21,8 @@ import ke.tahadhari.data.Counties
 import ke.tahadhari.data.County
 import ke.tahadhari.domain.*
 import ke.tahadhari.ui.*
+import ke.tahadhari.ui.mobile.WatchSection
+import ke.tahadhari.ui.mobile.WatchStates
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import java.io.File
@@ -132,5 +134,27 @@ class LargeTextTest {
             }
         }
     }
-}
 
+    @Test fun watchSection() {
+        val (_, forecast, assessment) = sample()
+        val watched = listOf(4, 30, 47).map { Counties.byCode(it)!! } // Tana River, Baringo, Nairobi
+        Language.entries.forEach { lang ->
+            scales.forEach { s ->
+                // States are filled in up front with the same refresh key, so the section fetches nothing.
+                val holder = WatchStates().apply {
+                    loadedRefreshKey = 0
+                    states[4] = LoadState.Ready(forecast, assessment, updatedAtMillis = System.currentTimeMillis(), fromCache = false)
+                    states[30] = LoadState.Ready(forecast, assessment, updatedAtMillis = System.currentTimeMillis() - 26 * 3_600_000L, fromCache = true)
+                    states[47] = LoadState.Failed("offline")
+                }
+                check("watch", s, 360, 1400, lang) {
+                    Surface(color = MaterialTheme.colorScheme.surface) {
+                        Column(Modifier.verticalScroll(rememberScrollState())) {
+                            WatchSection(watched, holder, refreshKey = 0, language = lang, riskAlertsOn = true, onOpen = {}, onAdd = {}, onRemove = {})
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
