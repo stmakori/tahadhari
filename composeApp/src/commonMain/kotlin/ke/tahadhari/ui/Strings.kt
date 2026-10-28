@@ -517,7 +517,8 @@ data class Strings(
                     "without internet. It is labelled \"Offline explanation\".",
                 aboutPrivacyTitle = "Privacy",
                 aboutPrivacyNoAccounts = "No accounts, no ads and no tracking.",
-                aboutPrivacyStored = "Your county, your language and the last forecast are saved only on this phone.",
+                aboutPrivacyStored = "Your county, the counties you watch, your language and the last forecasts are saved only on this phone. " +
+                    "Forecasts for watched counties are fetched the same way as your own county's.",
                 aboutPrivacyLocation = "Your location is used once, on this phone, only when you tap \"Use my location\". " +
                     "It is used to find the nearest county. It is not saved and not sent anywhere.",
                 aboutPrivacySent = "To get a forecast, the app sends the coordinates of your county's main town " +
@@ -829,7 +830,9 @@ data class Strings(
                     "bila mtandao. Huitwa \"Maelezo ya nje ya mtandao\".",
                 aboutPrivacyTitle = "Faragha",
                 aboutPrivacyNoAccounts = "Hakuna akaunti, matangazo wala ufuatiliaji.",
-                aboutPrivacyStored = "Kaunti yako, lugha yako na utabiri wa mwisho huhifadhiwa kwenye simu hii pekee.",
+                // TODO(review): watched-counties wording.
+                aboutPrivacyStored = "Kaunti yako, kaunti unazofuatilia, lugha yako na utabiri wa mwisho huhifadhiwa kwenye simu hii pekee. " +
+                    "Utabiri wa kaunti unazofuatilia hupatikana kwa njia ileile kama wa kaunti yako.",
                 aboutPrivacyLocation = "Mahali ulipo hutumiwa mara moja, kwenye simu hii, unapogusa \"Tumia mahali nilipo\" tu. " +
                     "Hutumika kupata kaunti iliyo karibu zaidi. Hapahifadhiwi wala kutumwa popote.",
                 aboutPrivacySent = "Ili kupata utabiri, programu hutuma viwianishi vya mji mkuu wa kaunti yako " +
