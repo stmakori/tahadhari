@@ -13,6 +13,12 @@ sealed interface RiskReason {
      * Raises a rainfall-based Moderate by one step, capped at High. [level] is the level it leads to.
      */
     data class SaturatedGround(val soilMoisture: Double, override val level: RiskLevel) : RiskReason
+    /**
+     * Heavy rain (heavy day or wet spell at or above [RiskThresholds.upstreamTriggerLevel]) in an upstream county
+     * can raise this county's river within days. [totalMm] is that county's wettest 3-day total; [level] is the
+     * floor it sets for this county.
+     */
+    data class UpstreamRain(val countyName: String, val totalMm: Double, override val level: RiskLevel) : RiskReason
     data class RiverRising(val riverName: String?, val ratio: Double, override val level: RiskLevel) : RiskReason
 }
 
@@ -22,6 +28,8 @@ data class RiskAssessment(
     val wettestDay: DailyRain?,
     val maxThreeDayTotalMm: Double,
     val river: RiverOutlook?,
+    /** Upstream rain could not be loaded for a county that has upstream counties (see [CountyForecast.upstreamUnavailable]). */
+    val upstreamUnavailable: Boolean = false,
 )
 
 /**
@@ -52,6 +60,14 @@ data class RiskThresholds(
      * datasets). See docs/validation.md section 8. The soil moisture fetch and the rule stay in the code.
      */
     val soilSaturatedM3m3: Double? = null,
+    /**
+     * Upstream rain: when an upstream county's rainfall-only level (heavy day / wet spell) reaches
+     * [upstreamTriggerLevel], the downstream county is at least this level. null (the default) disables the
+     * signal: the back-test showed it adds almost nothing beyond the river signal (4-6 extra county-days of 468 on
+     * the Tana counties, no new event hits). See docs/validation.md section 9. The fetch and the rule stay in the code.
+     */
+    val upstreamRainFloor: RiskLevel? = null,
+    val upstreamTriggerLevel: RiskLevel = RiskLevel.HIGH,
 )
 
 class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
@@ -65,12 +81,7 @@ class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
                 ?.let { reasons += RiskReason.HeavyDay(day.date, day.precipitationMm, it) }
         }
 
-        var bestTotal = 0.0
-        var bestStart: String? = null
-        forecast.days.windowed(size = 3, partialWindows = false).forEach { window ->
-            val total = window.sumOf { it.precipitationMm }
-            if (total > bestTotal) { bestTotal = total; bestStart = window.first().date }
-        }
+        val (bestTotal, bestStart) = wettestThreeDays(forecast.days)
         bestStart?.let { start ->
             levelFor(bestTotal, t.threeDayModerateMm, t.threeDayHighMm, t.threeDaySevereMm)
                 ?.let { reasons += RiskReason.WetSpell(start, bestTotal, it) }
@@ -107,6 +118,14 @@ class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
             reasons += RiskReason.SaturatedGround(soil, boosted)
         }
 
+        // Upstream rain: a floor, never a lowering. Missing upstream data (empty list) changes nothing.
+        val floor = t.upstreamRainFloor
+        if (floor != null) {
+            upstreamTrigger(forecast.upstream)?.let { (name, total) ->
+                reasons += RiskReason.UpstreamRain(name, total, floor)
+            }
+        }
+
         return RiskAssessment(
             level = reasons.maxOfOrNull { it.level } ?: RiskLevel.LOW,
             reasons = reasons.sortedByDescending { it.level },
@@ -114,8 +133,32 @@ class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
             maxThreeDayTotalMm = bestTotal,
             // Below the baseline floor the ratio is meaningless, so don't show it either.
             river = forecast.river?.takeIf { it.baselineDischarge >= t.riverMinBaselineM3s },
+            upstreamUnavailable = forecast.upstreamUnavailable && floor != null,
         )
     }
+
+    private fun wettestThreeDays(days: List<DailyRain>): Pair<Double, String?> {
+        var bestTotal = 0.0
+        var bestStart: String? = null
+        days.windowed(size = 3, partialWindows = false).forEach { window ->
+            val total = window.sumOf { it.precipitationMm }
+            if (total > bestTotal) { bestTotal = total; bestStart = window.first().date }
+        }
+        return bestTotal to bestStart
+    }
+
+    /** Rainfall-only level of an upstream county (heavy day / wet spell; never river or landslide) and its wettest 3-day total. */
+    private fun upstreamTrigger(upstream: List<UpstreamForecast>): Pair<String, Double>? =
+        upstream.mapNotNull { u ->
+            val day = u.days.maxOfOrNull { it.precipitationMm } ?: return@mapNotNull null
+            val (total, _) = wettestThreeDays(u.days)
+            val level = maxOf(
+                levelFor(day, t.dailyModerateMm, t.dailyHighMm, t.dailySevereMm) ?: RiskLevel.LOW,
+                levelFor(total, t.threeDayModerateMm, t.threeDayHighMm, t.threeDaySevereMm) ?: RiskLevel.LOW,
+            )
+            if (level >= t.upstreamTriggerLevel) Triple(u.countyName, maxOf(total, day), level) else null
+        }.maxWithOrNull(compareBy<Triple<String, Double, RiskLevel>> { it.third }.thenBy { it.second })
+            ?.let { it.first to it.second }
 
     private fun levelFor(value: Double, moderate: Double, high: Double, severe: Double): RiskLevel? = when {
         value >= severe -> RiskLevel.SEVERE

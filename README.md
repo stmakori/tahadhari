@@ -231,6 +231,12 @@ is at or above `RiskThresholds.soilSaturatedM3m3` and the rainfall-based level i
 capped at High. It never raises Low, never creates Severe, never lowers a level, and missing soil data
 changes nothing. The threshold is `null` in the shipped app, so users never see this reason.
 
+**Upstream rain (available, off by default; the back-test did not support it, see `docs/validation.md` section 9).** Garissa and Tana River flood from rain
+in the Mt Kenya and Aberdare catchment, and Busia and Siaya from the Nzoia catchment. When `RiskThresholds.upstreamRainFloor` is set and an upstream county's
+rainfall-only level (heavy day or wet spell) reaches `upstreamTriggerLevel` (High), the downstream county is at least that floor. It never lowers a level; if the upstream rain
+cannot be loaded, the local level stays and the explanation says upstream rain was not checked. Upstream rain costs at most one extra batched request on the phone and none on the dashboard.
+The back-test found the river signal already on for those counties, so the shipped value is `null`.
+
 **Chance of heavy rain (information only).** The county detail also shows how many of the 51 ECMWF
 ensemble runs have a day over 50 mm this week, for the county you are viewing only. It never changes
 the risk level, and is hidden while loading or if the request fails.

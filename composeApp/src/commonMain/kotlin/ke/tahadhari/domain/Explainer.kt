@@ -79,10 +79,29 @@ class TemplateExplainer : AlertExplainer {
         val acts = if (landslide) landslideActions(sw) + actions(a.level, sw) else actions(a.level, sw)
         return Explanation(
             headline,
-            body + wetGroundClause(a, sw) + landslideClause(county, landslide, sw) + hotspots,
+            body + wetGroundClause(a, sw) + landslideClause(county, landslide, sw) + upstreamClause(a, sw) + hotspots,
             acts.take(MAX_ACTIONS),
             ExplanationSource.TEMPLATE,
         )
+    }
+
+    /**
+     * Heavy rain upstream, or (when upstream data is missing) an honest "not checked". Never claims upstream is dry.
+     * TODO(review): Swahili wording needs a fluent speaker's check.
+     */
+    private fun upstreamClause(a: RiskAssessment, sw: Boolean): String {
+        val up = a.reasons.filterIsInstance<RiskReason.UpstreamRain>().firstOrNull()
+        if (up != null) {
+            val mm = up.totalMm.roundToInt()
+            val river = a.river?.riverName
+            return if (sw) " Mvua kubwa (takriban milimita $mm) inanyesha juu ya mto huko ${up.countyName}; inaweza kuinua ${river?.let { "mto $it" } ?: "mto"} ndani ya siku chache."
+            else " Heavy rain upstream in ${up.countyName} (about $mm mm) can raise ${river?.let { "the $it" } ?: "the river"} within days."
+        }
+        if (a.upstreamUnavailable) {
+            return if (sw) " Mvua za juu ya mto hazikuweza kukaguliwa."
+            else " Rain upstream could not be checked, so it is not included."
+        }
+        return ""
     }
 
     private fun wetGroundClause(a: RiskAssessment, sw: Boolean): String {

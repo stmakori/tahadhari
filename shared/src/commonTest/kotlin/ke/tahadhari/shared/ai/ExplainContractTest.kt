@@ -63,6 +63,13 @@ class ExplainContractTest {
         assertNotNull(ExplainContract.validateRequest(request.copy(reasons = listOf("EARTHQUAKE"))))
     }
 
+    @Test fun upstreamRainReasonIsAcceptedAndExplainedInPrompt() {
+        assertNull(ExplainContract.validateRequest(request.copy(reasons = listOf("RIVER_RISING", "UPSTREAM_RAIN"))))
+        assertTrue(PromptBuilder.user(request.copy(reasons = listOf("UPSTREAM_RAIN"))).contains("Reasons: UPSTREAM_RAIN"))
+        assertTrue(PromptBuilder.system.contains("UPSTREAM_RAIN"))
+        assertTrue(PromptBuilder.system.contains("never say upstream is dry"))
+    }
+
     @Test fun saturatedGroundReasonIsAcceptedAndExplainedInPrompt() {
         assertNull(ExplainContract.validateRequest(request.copy(reasons = listOf("WET_SPELL", "SATURATED_GROUND"))))
         assertTrue(PromptBuilder.user(request.copy(reasons = listOf("SATURATED_GROUND"))).contains("Reasons: SATURATED_GROUND"))

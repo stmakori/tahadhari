@@ -19,6 +19,7 @@ import ke.tahadhari.data.remote.OpenMeteoApi
 import ke.tahadhari.data.remote.OpenMeteoEnsembleApi
 import ke.tahadhari.domain.AlertExplainer
 import ke.tahadhari.domain.RiskEngine
+import ke.tahadhari.domain.RiskThresholds
 import ke.tahadhari.domain.TemplateExplainer
 import kotlinx.serialization.json.Json
 
@@ -51,9 +52,10 @@ object AppGraph {
     val preferences: Preferences by lazy { Preferences(store) }
 
     val repository: ForecastRepository by lazy {
-        ForecastRepository(OpenMeteoApi(httpClient), forecastCache, ::nowMillis)
+        ForecastRepository(OpenMeteoApi(httpClient), forecastCache, upstreamEnabled = riskThresholds.upstreamRainFloor != null, nowMillis = ::nowMillis)
     }
-    val riskEngine: RiskEngine by lazy { RiskEngine() }
+    val riskThresholds = RiskThresholds()
+    val riskEngine: RiskEngine by lazy { RiskEngine(riskThresholds) }
     /** Ensemble chance of heavy rain, one county at a time. Information only, never feeds [riskEngine]. */
     val ensemble: EnsembleRepository by lazy { EnsembleRepository(OpenMeteoEnsembleApi(httpClient)) }
     /** AI explanations when a server URL is configured, offline templates otherwise. */

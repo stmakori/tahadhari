@@ -43,4 +43,14 @@ data class CountyForecast(
     val fetchedAtDate: String,
     /** Soil moisture at 9-27 cm (m³/m³) when the forecast was fetched; null when unknown. */
     val soilMoistureM3m3: Double? = null,
+    /** Rain forecasts of this county's upstream counties ([ke.tahadhari.data.County.upstreamCodes]); empty when none were loaded. */
+    val upstream: List<UpstreamForecast> = emptyList(),
+    /**
+     * True when the upstream signal is enabled, this county has upstream counties, but their rain could not be
+     * loaded. Local risk is still valid; the explanation must then say upstream rain was not checked.
+     */
+    val upstreamUnavailable: Boolean = false,
 )
+
+/** Daily rain forecast of one upstream county (county HQ point). */
+data class UpstreamForecast(val countyName: String, val days: List<DailyRain>)

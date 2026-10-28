@@ -22,4 +22,9 @@ data class County(
     val landslideProne: Boolean = false,
     /** Specific landslide-prone areas, shown in advice. Only meaningful when [landslideProne]. */
     val landslideAreas: List<String> = emptyList(),
+    /**
+     * Codes of counties whose heavy rain feeds this county's river within days (see Counties.kt for sources).
+     * Used by the upstream-rain signal ([ke.tahadhari.domain.RiskThresholds.upstreamRainFloor], off by default).
+     */
+    val upstreamCodes: List<Int> = emptyList(),
 )

@@ -55,6 +55,7 @@ fun mainReasonText(a: RiskAssessment, language: Language, strings: Strings = Str
         is RiskReason.HeavyDay -> strings.shareMsgRainDay(r.mm.roundToInt(), Dates.dayName(r.date, language))
         is RiskReason.WetSpell -> strings.shareMsgRainSpell(r.totalMm.roundToInt(), Dates.dayName(r.startDate, language))
         is RiskReason.RiverRising -> strings.shareMsgRiver(r.riverName ?: strings.nearbyRiver, ratioText(r.ratio))
+        is RiskReason.UpstreamRain -> strings.upstream.shareMsg(r.countyName, r.totalMm.roundToInt())
         else -> strings.riskHeadline(r.level) // a reason type added later: still say something true
     }
 

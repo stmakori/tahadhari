@@ -27,6 +27,11 @@ data class CachedForecast(
     val pointLongitude: Double? = null,
     /** Soil moisture 9-27 cm (m³/m³) at [fetchedAtMillis]; null when the API gave none. */
     val soilMoistureM3m3: Double? = null,
+    /**
+     * Rain of the upstream counties used by the upstream-rain signal (empty when the signal is off or the fetch
+     * failed). Stored with the downstream county so one cache entry holds everything its risk is computed from.
+     */
+    val upstream: List<CachedUpstream> = emptyList(),
     val version: Int = CURRENT_VERSION,
 ) {
     val point: GeoPoint? get() = if (pointLatitude != null && pointLongitude != null) GeoPoint(pointLatitude, pointLongitude) else null
@@ -35,6 +40,10 @@ data class CachedForecast(
         const val CURRENT_VERSION = 1
     }
 }
+
+/** Raw rain forecast of one upstream county (HQ point) and when it was fetched. */
+@Serializable
+data class CachedUpstream(val countyCode: Int, val fetchedAtMillis: Long, val rainfall: RainfallDaily)
 
 /** Per-county forecast cache on top of a [KeyValueStore]. Corrupt or unknown entries read as null. */
 class ForecastCache(private val store: KeyValueStore) {

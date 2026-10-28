@@ -9,6 +9,7 @@ import ke.tahadhari.domain.Dates
 import ke.tahadhari.domain.DailyRain
 import ke.tahadhari.domain.Freshness
 import ke.tahadhari.domain.RiverOutlook
+import ke.tahadhari.domain.UpstreamForecast
 import ke.tahadhari.domain.UserPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
@@ -39,6 +40,11 @@ data class ForecastResult(
 class ForecastRepository(
     private val api: ForecastApi,
     private val cache: ForecastCache,
+    /**
+     * True when the upstream-rain signal is on (`RiskThresholds.upstreamRainFloor != null`). Only then are upstream
+     * counties' rain fetched: one extra batched call in [forecastFor] (at most), none in [forecastsFor] (it reuses the batch).
+     */
+    private val upstreamEnabled: Boolean = false,
     private val nowMillis: () -> Long,
 ) {
 
@@ -51,8 +57,29 @@ class ForecastRepository(
             return fromCache(county) ?: throw e
         }
         cache.write(fetched)
-        val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null, soilMoisture = fetched.soilMoistureM3m3)
+        val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null, soilMoisture = fetched.soilMoistureM3m3,
+            upstream = fetched.upstream, expectsUpstream = expectsUpstream(county))
         return ForecastResult(forecast, fetched.fetchedAtMillis, fromCache = false)
+    }
+
+    private fun expectsUpstream(county: County) = upstreamEnabled && county.upstreamCodes.isNotEmpty()
+
+    /** One batched call for the upstream counties' rain. Null on any failure: local data is still valid without it. */
+    private suspend fun fetchUpstream(county: County): List<CachedUpstream>? {
+        val upstream = county.upstreamCodes.mapNotNull { Counties.byCode(it) }
+        if (upstream.isEmpty()) return null
+        return try {
+            val responses = api.dailyRainfallBatch(upstream.map { it.location })
+            check(responses.size == upstream.size) { "Expected ${upstream.size} upstream results but got ${responses.size}" }
+            val at = nowMillis()
+            upstream.zip(responses).mapNotNull { (c, response) ->
+                response?.daily?.takeIf { it.time.isNotEmpty() }?.let { CachedUpstream(c.code, at, it) }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private suspend fun fetch(county: County): CachedForecast = coroutineScope {
@@ -68,8 +95,10 @@ class ForecastRepository(
                 }
             }
         }
+        val upstreamCall = if (expectsUpstream(county)) async { fetchUpstream(county) } else null
         val rain = rainCall.await()
-        assemble(county, rain.daily, rain.current?.soilMoisture, floodCall?.await(), expectsFlood = floodCall != null, now = nowMillis())
+        assemble(county, rain.daily, rain.current?.soilMoisture, floodCall?.await(), expectsFlood = floodCall != null, now = nowMillis(),
+            freshUpstream = upstreamCall?.await())
     }
 
     /**
@@ -84,6 +113,7 @@ class ForecastRepository(
         freshFlood: FloodDaily?,
         expectsFlood: Boolean,
         now: Long,
+        freshUpstream: List<CachedUpstream>? = null,
     ): CachedForecast {
         var flood = freshFlood
         var floodAt: Long? = if (flood != null) now else null
@@ -93,11 +123,22 @@ class ForecastRepository(
                 cached.flood != null && at != null && !Freshness.isTooOldToShow(at, now)
             }?.let { flood = it.flood; floodAt = it.floodFetchedAtMillis }
         }
+        // Upstream rain: fresh data first; any upstream county missing from it is filled from recent cached data.
+        val upstream = if (!expectsUpstream(county)) emptyList() else {
+            val fresh = freshUpstream.orEmpty()
+            val have = fresh.map { it.countyCode }.toSet()
+            val cachedUp = if (county.upstreamCodes.any { it !in have }) {
+                cache.read(county.code, ForecastCache.pointOf(county))?.upstream.orEmpty()
+                    .filter { it.countyCode in county.upstreamCodes && it.countyCode !in have && !Freshness.isTooOldToShow(it.fetchedAtMillis, now) }
+            } else emptyList()
+            fresh + cachedUp
+        }
         return CachedForecast(
             countyCode = county.code,
             fetchedAtMillis = now,
             rainfall = rain,
             soilMoistureM3m3 = soilMoisture,
+            upstream = upstream,
             flood = flood,
             floodFetchedAtMillis = floodAt,
             pointLatitude = ForecastCache.pointOf(county)?.latitude,
@@ -164,9 +205,14 @@ class ForecastRepository(
             val rain = rainByCode[county.code]
             county.code to if (rain != null) {
                 try {
-                    val fetched = assemble(county, rain, soilByCode[county.code], floodByCode[county.code], county.riverPoint != null, now)
+                    // Upstream rain comes from the same batch (the dashboard loads all 47): no extra HTTP call.
+                    val upstreamFromBatch = if (expectsUpstream(county)) county.upstreamCodes.mapNotNull { code ->
+                        rainByCode[code]?.let { CachedUpstream(code, now, it) }
+                    } else null
+                    val fetched = assemble(county, rain, soilByCode[county.code], floodByCode[county.code], county.riverPoint != null, now, upstreamFromBatch)
                     cache.write(fetched)
-                    val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null, soilMoisture = fetched.soilMoistureM3m3)
+                    val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null, soilMoisture = fetched.soilMoistureM3m3,
+                        upstream = fetched.upstream, expectsUpstream = expectsUpstream(county))
                     Result.success(ForecastResult(forecast, fetched.fetchedAtMillis, fromCache = false))
                 } catch (e: CancellationException) {
                     throw e
@@ -184,7 +230,8 @@ class ForecastRepository(
     private suspend fun fromCache(county: County): ForecastResult? {
         val cached = cache.read(county.code, ForecastCache.pointOf(county)) ?: return null
         val today = Dates.isoDateFromEpochMillis(nowMillis())
-        val forecast = buildForecast(county, cached.rainfall, cached.flood, today, cached.soilMoistureM3m3)
+        val forecast = buildForecast(county, cached.rainfall, cached.flood, today, cached.soilMoistureM3m3,
+            upstream = cached.upstream, expectsUpstream = expectsUpstream(county))
         if (forecast.days.isEmpty()) return null // every cached day is already in the past
         return ForecastResult(
             forecast.copy(fetchedAtDate = Dates.isoDateFromEpochMillis(cached.fetchedAtMillis)),
@@ -208,23 +255,34 @@ class ForecastRepository(
             flood: FloodDaily?,
             today: String?,
             soilMoisture: Double? = null,
+            upstream: List<CachedUpstream> = emptyList(),
+            expectsUpstream: Boolean = false,
         ): CountyForecast {
-            val days = rain.time.mapIndexed { i, date ->
-                DailyRain(
-                    date = date,
-                    precipitationMm = rain.precipitationSum.getOrNull(i) ?: 0.0,
-                    probabilityPercent = rain.precipitationProbabilityMax.getOrNull(i),
-                )
-            }.filter { today == null || it.date >= today }
+            val days = dailyRains(rain, today)
             val firstDay = today ?: days.firstOrNull()?.date ?: ""
 
+            val upstreamForecasts = if (!expectsUpstream) emptyList() else upstream.mapNotNull { u ->
+                val name = Counties.byCode(u.countyCode)?.name ?: return@mapNotNull null
+                dailyRains(u.rainfall, today).takeIf { it.isNotEmpty() }?.let { UpstreamForecast(name, it) }
+            }
             val river = flood?.let {
                 RiverOutlook.fromSeries(county.riverName, it.time, it.riverDischarge, firstDay)
             }
             return CountyForecast(
                 county = county, days = days, river = river, fetchedAtDate = firstDay,
                 soilMoistureM3m3 = soilMoisture,
+                upstream = upstreamForecasts,
+                // Any upstream county missing (or all its days already past) means "not fully checked", never "dry".
+                upstreamUnavailable = expectsUpstream && upstreamForecasts.size < county.upstreamCodes.size,
             )
         }
+
+        private fun dailyRains(rain: RainfallDaily, today: String?): List<DailyRain> = rain.time.mapIndexed { i, date ->
+            DailyRain(
+                date = date,
+                precipitationMm = rain.precipitationSum.getOrNull(i) ?: 0.0,
+                probabilityPercent = rain.precipitationProbabilityMax.getOrNull(i),
+            )
+        }.filter { today == null || it.date >= today }
     }
 }

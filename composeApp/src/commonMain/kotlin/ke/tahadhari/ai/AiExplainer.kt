@@ -66,6 +66,7 @@ class AiExplainer(
                         is RiskReason.RiverRising -> "RIVER_RISING"
                         is RiskReason.LandslideRisk -> "LANDSLIDE"
                         is RiskReason.SaturatedGround -> "SATURATED_GROUND"
+                        is RiskReason.UpstreamRain -> "UPSTREAM_RAIN"
                     }
                 },
             )
