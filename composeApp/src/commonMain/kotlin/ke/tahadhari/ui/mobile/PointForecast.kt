@@ -1,5 +1,6 @@
 package ke.tahadhari.ui.mobile
 
+import ke.tahadhari.data.geo.CountyShapes
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -46,7 +47,8 @@ internal fun PointForecastCard(
         val s = currentStrings
         when (result) {
             is LocationResult.Found -> {
-                val p = UserPoint.forCounty(GeoPoint(result.latitude, result.longitude), hqCounty)
+                val inside = CountyShapes.all[hqCounty.code]?.contains(result.longitude, result.latitude) == true
+                val p = UserPoint.forCounty(GeoPoint(result.latitude, result.longitude), hqCounty, inside)
                 if (p != null) { message = null; onPoint(p) } else message = s.pointTooFar(hqCounty.name)
             }
             LocationResult.PermissionDenied -> message = s.locationDenied

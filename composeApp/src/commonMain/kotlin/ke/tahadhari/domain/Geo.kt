@@ -65,12 +65,14 @@ object UserPoint {
 
     /**
      * The rounded point to forecast for, or null when it should not be offered: outside Kenya, or
-     * more than [MAX_DISTANCE_KM] from [county]'s HQ (the user is probably not in that county).
+     * neither inside [county]'s boundary ([insideCounty], checked by the caller against the map data)
+     * nor within [MAX_DISTANCE_KM] of its HQ. The boundary check matters for large counties such as
+     * Turkana and Marsabit, where much of the county is more than 100 km from the HQ.
      */
-    fun forCounty(raw: GeoPoint, county: County): GeoPoint? {
+    fun forCounty(raw: GeoPoint, county: County, insideCounty: Boolean = false): GeoPoint? {
         if (!Geo.isInKenyaBox(raw)) return null
         val rounded = round(raw)
-        return rounded.takeIf { Geo.distanceKm(it, county.location) <= MAX_DISTANCE_KM }
+        return rounded.takeIf { insideCounty || Geo.distanceKm(it, county.location) <= MAX_DISTANCE_KM }
     }
 
     private fun round2(x: Double): Double = kotlin.math.round(x * 100.0) / 100.0 + 0.0 // + 0.0 turns -0.0 into 0.0

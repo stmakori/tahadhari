@@ -1,5 +1,6 @@
 package ke.tahadhari
 
+import ke.tahadhari.data.geo.CountyShapes
 import ke.tahadhari.data.Counties
 import ke.tahadhari.data.ForecastCache
 import ke.tahadhari.data.ForecastRepository
@@ -57,6 +58,16 @@ class PointForecastTest {
         // Just inside and just outside 100 km (1 degree of latitude is about 111 km).
         assertNotNull(UserPoint.forCounty(GeoPoint(nairobi.location.latitude + 0.8, nairobi.location.longitude), nairobi))
         assertNull(UserPoint.forCounty(GeoPoint(nairobi.location.latitude + 1.0, nairobi.location.longitude), nairobi))
+    }
+
+    @Test fun farPointInsideALargeCountyIsOffered() {
+        val turkana = Counties.all.first { it.name.contains("Turkana") }
+        val lokichogio = GeoPoint(4.2, 34.35) // north-west Turkana, roughly 230 km from Lodwar
+        assertEquals(turkana.code, CountyShapes.countyAt(lokichogio.longitude, lokichogio.latitude))
+        assertNull(UserPoint.forCounty(lokichogio, turkana))
+        assertEquals(GeoPoint(4.2, 34.35), UserPoint.forCounty(lokichogio, turkana, insideCounty = true))
+        // Inside the county but outside Kenya's box is still refused.
+        assertNull(UserPoint.forCounty(GeoPoint(51.5, -0.12), turkana, insideCounty = true))
     }
 
     @Test fun atPointKeepsRiverHotspotsAndLandslideData() {
