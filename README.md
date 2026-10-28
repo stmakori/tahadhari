@@ -23,14 +23,39 @@ with clear advice on what to do.
   farms, lightning and flash floods, with sources.
 - **Emergency** tab: tap-to-dial 999, 112 and 1199 (Kenya Red Cross), your county's known hotspots,
   and "I'm safe" / "I need help" messages shared through any app.
-- English and Swahili throughout.
+- **Home-screen widget** with your county's risk, refreshed every 3 hours (shows "No data" rather
+  than Low when the forecast can't be loaded).
+- First-launch intro, an **About / How it works** page (risk thresholds, data sources, privacy),
+  and pull-to-refresh.
+- English and Swahili throughout, light and dark themes, screen-reader labels, and layouts tested
+  at 1.5× text size.
 
 **Desktop dashboard (county teams, Red Cross, NGOs)**
 - Kenya county map coloured by risk (hover for details, click to select). Counties without data
   are hatched and labelled "No data", never shown as Low.
 - Summary chips per level that filter a ranked list (wettest day, 3-day total, river rise).
-- Side-by-side county detail, overall "last updated" time, refresh, EN/SW toggle.
-- **Export CSV** of all 47 counties for reports and spreadsheets.
+- Side-by-side county detail, overall "last updated" time, EN/SW toggle, About dialog.
+- Refreshes automatically every 3 hours, keeping the current data on screen while it reloads.
+- **Export CSV** of all 47 counties, or a printable **HTML briefing** (counts, ranked table, and
+  what to do in High and Severe counties) for morning briefings.
+  [Sample briefing](docs/briefing-sample.html).
+- Remembers language, selected county and filter between runs.
+
+## Screenshots
+
+| Dashboard | Dashboard (Swahili, filtered to High) |
+|---|---|
+| ![Dashboard](docs/screenshots/dashboard-wide-light.png) | ![Dashboard in Swahili](docs/screenshots/dashboard-wide-sw-filtered-light.png) |
+
+| County detail | Swahili, dark | Safety guide | Emergency |
+|---|---|---|---|
+| ![County detail](docs/screenshots/detail-english-light.png) | ![County detail in Swahili](docs/screenshots/detail-swahili-dark.png) | ![Flood guide](docs/screenshots/phone-guide-floods-sw-light.png) | ![Emergency](docs/screenshots/phone-emergency-en-light.png) |
+
+| County picker | Location | About | Intro |
+|---|---|---|---|
+| ![Picker](docs/screenshots/picker-light.png) | ![Location card states](docs/screenshots/phone-location-card-en-light.png) | ![About](docs/screenshots/phone-about-en-light.png) | ![Intro](docs/screenshots/phone-intro-2-sw-dark.png) |
+
+Screenshots are rendered from sample data by `TAHADHARI_SCREENSHOTS=1 ./gradlew :composeApp:desktopTest`.
 
 > ⚠️ Tahadhari provides guidance based on forecast data. It is **not an official warning**.
 > Always follow the Kenya Meteorological Service and your county government.
@@ -55,13 +80,26 @@ the JDK so it picks up the variable.
 ### Try the key features
 
 1. **Dashboard**: run the desktop app, wait for the 47 counties to load, click a "High" or
-   "Severe" chip, hover over the map, click a county, then press **Export CSV**.
+   "Severe" chip, hover over the map, click a county, then use **Export → Export briefing** and
+   open the file in a browser.
 2. **Offline mode**: open a county, turn off your network and press refresh. The saved forecast is
    shown with a warning, never an error that looks like "Low".
 3. **Phone flow**: on Android (or with `--args="--mobile"`), pick a county, switch to **SW**, open
    **Safety → Floods**, then **Emergency → I'm safe** to share a check-in message.
-4. **Screenshots** of every screen with sample data (no network needed):
+4. **Widget**: on Android, choose a county in the app, then long-press the home screen →
+   Widgets → Tahadhari.
+5. **Screenshots** of every screen with sample data (no network needed):
    `TAHADHARI_SCREENSHOTS=1 ./gradlew :composeApp:desktopTest`, output in `composeApp/build/screenshots/`.
+
+### Release builds
+
+- `./gradlew :composeApp:assembleRelease` builds a minified APK (R8). To sign it, copy
+  `keystore.properties.example` to `keystore.properties` (git-ignored) or set the
+  `TAHADHARI_KEYSTORE_*` environment variables. Without them the APK is debug-signed, with a
+  warning, and must not be published.
+- CI (`.github/workflows/ci.yml`) runs every test and builds the APK and a Linux installer on each
+  push. Pushing a `v*` tag runs `release.yml`, which builds the APK, MSI, DMG and DEB and attaches
+  them to a GitHub Release.
 
 ## AI explanations (optional)
 

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>County flood risk briefing · 2026-10-28</title>
+<style>
+:root{color-scheme:light}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:#171d1e;background:#fff;margin:0 auto;padding:24px;max-width:1000px;line-height:1.45;font-size:14px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.app{margin:0;color:#0e6670;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:12px}
+h1{margin:.1em 0 .2em;font-size:26px}
+h2{font-size:18px;margin:1.6em 0 .6em;break-after:avoid;border-bottom:2px solid #0e6670;padding-bottom:4px}
+h3{margin:0 0 .3em;font-size:16px}
+h4{margin:.8em 0 .2em;font-size:13px}
+.meta{margin:0 0 .8em;color:#3f4949}
+.note{border:1px solid #6f7979;border-radius:6px;padding:8px 12px;background:#f1f5f5;margin:0}
+.hint{color:#3f4949;font-size:12px}
+.counts{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0}
+.counts li{border:1px solid #6f7979;border-left-width:8px;border-radius:6px;padding:6px 12px;font-weight:600}
+.counts .n{font-size:20px;font-weight:700;margin-right:4px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:5px 7px;border-bottom:1px solid #bec8c9;vertical-align:top}
+thead{display:table-header-group}
+th{background:#e9efef;border-bottom:2px solid #6f7979}
+tr{break-inside:avoid;page-break-inside:avoid}
+.badge{display:inline-block;border:1px solid;border-radius:999px;padding:1px 9px;font-weight:700;white-space:nowrap}
+.lvl-low{background:#ddf2df;color:#0f3d14;border-color:#2e7d32}
+.lvl-moderate{background:#fff1c2;color:#4a3800;border-color:#b78a00}
+.lvl-high{background:#ffe2d2;color:#5c1f00;border-color:#c2410c}
+.lvl-severe{background:#ffdad6;color:#5f0f0a;border-color:#b3261e}
+.nodata{background:#fff;color:#3f4949;border:1px dashed #6f7979}
+tr.lvl-low,tr.lvl-moderate,tr.lvl-high,tr.lvl-severe,tr.nodata{background:none;color:inherit;border:0}
+.badge.lvl-low,.badge.lvl-moderate,.badge.lvl-high,.badge.lvl-severe{border-style:solid}
+.county{border:1px solid #6f7979;border-left-width:8px;border-radius:6px;padding:10px 14px;margin:0 0 12px;break-inside:avoid;page-break-inside:avoid}
+.county.lvl-high{border-left-color:#c2410c;background:#fffaf7;color:#171d1e}
+.county.lvl-severe{border-left-color:#b3261e;background:#fffafa;color:#171d1e}
+.counts li.lvl-low{border-left-color:#2e7d32}.counts li.lvl-moderate{border-left-color:#b78a00}
+.counts li.lvl-high{border-left-color:#c2410c}.counts li.lvl-severe{border-left-color:#b3261e}
+.counts li{background:#fff;color:#171d1e}
+.headline{font-weight:700;margin:.2em 0}
+.cached{color:#93000a;font-weight:600;margin:.2em 0}
+.county p{margin:.3em 0}.county ul{margin:.2em 0;padding-left:20px}
+footer{margin-top:2em;border-top:1px solid #bec8c9;padding-top:8px;color:#3f4949;font-size:12px}
+@media print{body{padding:0;max-width:none;font-size:11pt}@page{margin:14mm}.screen-only{display:none}h2{margin-top:1.2em}}
+</style>
+</head>
+<body>
+<header>
+<p class="app">Tahadhari</p>
+<h1>County flood risk briefing</h1>
+<p class="meta">Generated 2026-10-28 at 08:18 (Nairobi time)</p>
+<p class="note">Guidance based on Open-Meteo forecast data. This is not an official warning. Always follow Kenya Meteorological Service and county government advisories.</p>
+<p class="screen-only hint">To print or save as PDF, use your browser&#39;s Print command (Ctrl+P).</p>
+</header>
+<section>
+<h2>Counties by risk level</h2>
+<ul class="counts">
+<li class="lvl-severe"><span class="n">3</span> Severe</li>
+<li class="lvl-high"><span class="n">5</span> High</li>
+<li class="lvl-moderate"><span class="n">14</span> Moderate</li>
+<li class="lvl-low"><span class="n">21</span> Low</li>
+<li class="nodata"><span class="n">2</span> No data</li>
+<li class="nodata"><span class="n">2</span> Loading</li>
+</ul>
+</section>
+<section>
+<h2>All counties, highest risk first</h2>
+<table>
+<thead><tr><th scope="col">#</th><th scope="col">County</th><th scope="col">Risk level</th><th scope="col">Wettest day</th><th scope="col">Wettest 3 days</th><th scope="col">River rise</th><th scope="col">Updated</th><th scope="col">Status</th></tr></thead>
+<tbody>
+<tr class="lvl-severe"><td>1</td><td>Tana River</td><td><span class="badge lvl-severe">Severe</span></td><td>Thursday · 99 mm</td><td>209 mm</td><td>×3.3 Tana River</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-severe"><td>2</td><td>Garissa</td><td><span class="badge lvl-severe">Severe</span></td><td>Thursday · 92 mm</td><td>194 mm</td><td>×3.3 Tana River</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-severe"><td>3</td><td>Busia</td><td><span class="badge lvl-severe">Severe</span></td><td>Thursday · 85 mm</td><td>180 mm</td><td>×2.4 Nzoia River</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-high"><td>4</td><td>Homa Bay</td><td><span class="badge lvl-high">High</span></td><td>Thursday · 57 mm</td><td>116 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-high"><td>5</td><td>Kilifi</td><td><span class="badge lvl-high">High</span></td><td>Thursday · 57 mm</td><td>116 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Saved forecast (offline)</td></tr>
+<tr class="lvl-high"><td>6</td><td>Kisumu</td><td><span class="badge lvl-high">High</span></td><td>Thursday · 56 mm</td><td>115 mm</td><td>×1.9 Nyando River</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-high"><td>7</td><td>Lamu</td><td><span class="badge lvl-high">High</span></td><td>Thursday · 56 mm</td><td>114 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-high"><td>8</td><td>Siaya</td><td><span class="badge lvl-high">High</span></td><td>Thursday · 56 mm</td><td>114 mm</td><td>×2.4 Nzoia River</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>9</td><td>Embu</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 28 mm</td><td>52 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>10</td><td>Kirinyaga</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 28 mm</td><td>52 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>11</td><td>Kwale</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 28 mm</td><td>52 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>12</td><td>Makueni</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 28 mm</td><td>52 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>13</td><td>Migori</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 28 mm</td><td>52 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>14</td><td>Vihiga</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 28 mm</td><td>52 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>15</td><td>Kakamega</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 26 mm</td><td>49 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>16</td><td>Mombasa</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 26 mm</td><td>49 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>17</td><td>Nyamira</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 26 mm</td><td>49 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>18</td><td>Tharaka-Nithi</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 26 mm</td><td>49 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>19</td><td>Bungoma</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 25 mm</td><td>47 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>20</td><td>Kitui</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 25 mm</td><td>47 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>21</td><td>Meru</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 25 mm</td><td>47 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-moderate"><td>22</td><td>Taita-Taveta</td><td><span class="badge lvl-moderate">Moderate</span></td><td>Wednesday · 25 mm</td><td>47 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>23</td><td>Baringo</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>24</td><td>Elgeyo-Marakwet</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>25</td><td>Isiolo</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>26</td><td>Kajiado</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>27</td><td>Kericho</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>28</td><td>Kiambu</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>29</td><td>Laikipia</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>30</td><td>Machakos</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>31</td><td>Mandera</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>32</td><td>Murang&#39;a</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>33</td><td>Nairobi</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>34</td><td>Nakuru</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>35</td><td>Nandi</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>36</td><td>Narok</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>37</td><td>Nyandarua</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>38</td><td>Nyeri</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>39</td><td>Samburu</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>40</td><td>Trans Nzoia</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>41</td><td>Turkana</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>42</td><td>Uasin Gishu</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="lvl-low"><td>43</td><td>West Pokot</td><td><span class="badge lvl-low">Low</span></td><td>Wednesday · 3 mm</td><td>6 mm</td><td>–</td><td>Wed 28 Oct, 07:53</td><td>Current</td></tr>
+<tr class="nodata"><td>–</td><td>Kisii</td><td><span class="badge nodata">No data</span></td><td>–</td><td>–</td><td>–</td><td>–</td><td>No data</td></tr>
+<tr class="nodata"><td>–</td><td>Wajir</td><td><span class="badge nodata">No data</span></td><td>–</td><td>–</td><td>–</td><td>–</td><td>No data</td></tr>
+<tr class="nodata"><td>–</td><td>Bomet</td><td><span class="badge nodata">Loading</span></td><td>–</td><td>–</td><td>–</td><td>–</td><td>No data</td></tr>
+<tr class="nodata"><td>–</td><td>Marsabit</td><td><span class="badge nodata">Loading</span></td><td>–</td><td>–</td><td>–</td><td>–</td><td>No data</td></tr>
+</tbody>
+</table>
+</section>
+<section>
+<h2>High and Severe counties: what to do</h2>
+<article class="county lvl-severe">
+<h3>Tana River <span class="badge lvl-severe">Severe</span></h3>
+<p class="headline">Severe flood risk in Tana River</p>
+<p>Very heavy rain of about 99 mm is expected on Thursday, with 209 mm over three days, and the Tana River is forecast to rise to about 3.3 times its recent level. Serious flooding and landslides are possible. Areas most at risk: Garsen, Tana Delta.</p>
+<h4>What to do</h4>
+<ul>
+<li>If you live near a river, on a steep slope or in a low-lying area, move to higher ground early. Don&#39;t wait until dark</li>
+<li>Never walk, swim or drive through flood water</li>
+<li>Keep children and livestock away from rivers and drainage channels</li>
+<li>In an emergency call 999 or 112, or 1199 for the Kenya Red Cross</li>
+</ul>
+</article>
+<article class="county lvl-severe">
+<h3>Garissa <span class="badge lvl-severe">Severe</span></h3>
+<p class="headline">Severe flood risk in Garissa</p>
+<p>Very heavy rain of about 92 mm is expected on Thursday, with 194 mm over three days, and the Tana River is forecast to rise to about 3.3 times its recent level. Serious flooding and landslides are possible. Areas most at risk: Garissa town riverside.</p>
+<h4>What to do</h4>
+<ul>
+<li>If you live near a river, on a steep slope or in a low-lying area, move to higher ground early. Don&#39;t wait until dark</li>
+<li>Never walk, swim or drive through flood water</li>
+<li>Keep children and livestock away from rivers and drainage channels</li>
+<li>In an emergency call 999 or 112, or 1199 for the Kenya Red Cross</li>
+</ul>
+</article>
+<article class="county lvl-severe">
+<h3>Busia <span class="badge lvl-severe">Severe</span></h3>
+<p class="headline">Severe flood risk in Busia</p>
+<p>Very heavy rain of about 85 mm is expected on Thursday, with 180 mm over three days, and the Nzoia River is forecast to rise to about 2.4 times its recent level. Serious flooding and landslides are possible. Areas most at risk: Budalangi.</p>
+<h4>What to do</h4>
+<ul>
+<li>If you live near a river, on a steep slope or in a low-lying area, move to higher ground early. Don&#39;t wait until dark</li>
+<li>Never walk, swim or drive through flood water</li>
+<li>Keep children and livestock away from rivers and drainage channels</li>
+<li>In an emergency call 999 or 112, or 1199 for the Kenya Red Cross</li>
+</ul>
+</article>
+<article class="county lvl-high">
+<h3>Homa Bay <span class="badge lvl-high">High</span></h3>
+<p class="headline">High flood risk in Homa Bay</p>
+<p>Heavy rain of about 57 mm is expected on Thursday, with 116 mm over three days. Flooding is possible in low-lying areas and near rivers.</p>
+<h4>What to do</h4>
+<ul>
+<li>If you live near a river or in a low-lying area, plan where you will go if water rises</li>
+<li>Move important documents and valuables to a high, dry place</li>
+<li>Don&#39;t cross flooded roads or bridges</li>
+<li>Boil or treat drinking water</li>
+</ul>
+</article>
+<article class="county lvl-high">
+<h3>Kilifi <span class="badge lvl-high">High</span></h3>
+<p class="cached">Saved forecast (offline) · Wed 28 Oct, 07:53</p>
+<p class="headline">High flood risk in Kilifi</p>
+<p>Heavy rain of about 57 mm is expected on Thursday, with 116 mm over three days. Flooding is possible in low-lying areas and near rivers.</p>
+<h4>What to do</h4>
+<ul>
+<li>If you live near a river or in a low-lying area, plan where you will go if water rises</li>
+<li>Move important documents and valuables to a high, dry place</li>
+<li>Don&#39;t cross flooded roads or bridges</li>
+<li>Boil or treat drinking water</li>
+</ul>
+</article>
+<article class="county lvl-high">
+<h3>Kisumu <span class="badge lvl-high">High</span></h3>
+<p class="headline">High flood risk in Kisumu</p>
+<p>Heavy rain of about 56 mm is expected on Thursday, with 115 mm over three days. Flooding is possible in low-lying areas and near rivers. Areas most at risk: Nyando, Ahero, Kano Plains.</p>
+<h4>What to do</h4>
+<ul>
+<li>If you live near a river or in a low-lying area, plan where you will go if water rises</li>
+<li>Move important documents and valuables to a high, dry place</li>
+<li>Don&#39;t cross flooded roads or bridges</li>
+<li>Boil or treat drinking water</li>
+</ul>
+</article>
+<article class="county lvl-high">
+<h3>Lamu <span class="badge lvl-high">High</span></h3>
+<p class="headline">High flood risk in Lamu</p>
+<p>Heavy rain of about 56 mm is expected on Thursday, with 114 mm over three days. Flooding is possible in low-lying areas and near rivers.</p>
+<h4>What to do</h4>
+<ul>
+<li>If you live near a river or in a low-lying area, plan where you will go if water rises</li>
+<li>Move important documents and valuables to a high, dry place</li>
+<li>Don&#39;t cross flooded roads or bridges</li>
+<li>Boil or treat drinking water</li>
+</ul>
+</article>
+<article class="county lvl-high">
+<h3>Siaya <span class="badge lvl-high">High</span></h3>
+<p class="headline">High flood risk in Siaya</p>
+<p>Heavy rain of about 56 mm is expected on Thursday, with 114 mm over three days, and the Nzoia River is forecast to rise to about 2.4 times its recent level. Flooding is possible in low-lying areas and near rivers. Areas most at risk: Lower Nzoia, Yala Swamp.</p>
+<h4>What to do</h4>
+<ul>
+<li>If you live near a river or in a low-lying area, plan where you will go if water rises</li>
+<li>Move important documents and valuables to a high, dry place</li>
+<li>Don&#39;t cross flooded roads or bridges</li>
+<li>Boil or treat drinking water</li>
+</ul>
+</article>
+</section>
+<footer>
+<p>Guidance based on Open-Meteo forecast data. This is not an official warning. Always follow Kenya Meteorological Service and county government advisories.</p>
+<p>County boundaries: geoBoundaries (RCMRD), public domain. Forecasts: Open-Meteo.com (CC BY 4.0).</p>
+</footer>
+</body>
+</html>

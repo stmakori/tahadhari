@@ -54,16 +54,15 @@ private val ThreePaneMinWidth = 1400.dp
  * everything every 3 hours while open (when the toggle is on).
  *
  * @param onExport saves an exported file, CSV or HTML briefing (desktop: a file dialog). Null hides the export menu.
- * @param onAbout opens the About dialog (wired by the caller).
  */
 @Composable
 fun DashboardApp(
     darkTheme: Boolean = isSystemInDarkTheme(),
     onExport: (suspend (FileExportRequest) -> FileExportResult)? = null,
-    onAbout: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val state = remember { DashboardState(scope) }
+    var showAbout by remember { mutableStateOf(false) }
     LaunchedEffect(state) {
         val settingsStore = DashboardSettingsStore(AppGraph.store)
         state.restore(settingsStore.load())
@@ -72,7 +71,27 @@ fun DashboardApp(
         snapshotFlow { state.settings }.drop(1).collect { settingsStore.save(it) }
     }
     LaunchedEffect(state, state.autoRefresh) { state.autoRefreshLoop() }
-    DashboardScreen(state, darkTheme, onExport = onExport, onAbout = onAbout)
+    DashboardScreen(state, darkTheme, onExport = onExport, onAbout = { showAbout = true })
+    if (showAbout) {
+        TahadhariTheme(darkTheme) { AboutDialog(state.language) { showAbout = false } }
+    }
+}
+
+/** About / how it works, shared with the phone app's About page. */
+@Composable
+private fun AboutDialog(language: ke.tahadhari.domain.Language, onDismiss: () -> Unit) {
+    val strings = Strings.of(language)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(strings.aboutTitle, modifier = Modifier.semantics { heading() }) },
+        text = {
+            Box(Modifier.widthIn(max = 720.dp).heightIn(max = 640.dp).verticalScroll(rememberScrollState())) {
+                AboutContent(language)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(strings.aboutBack) } },
+        modifier = Modifier.widthIn(max = 760.dp),
+    )
 }
 
 /** The dashboard UI for a given [state]. Screenshot tests call this with fake data and no network. */
