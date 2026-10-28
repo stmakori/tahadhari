@@ -24,16 +24,9 @@ internal fun AboutPage(
     val strings = Strings.of(language)
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        strings.aboutPage.aboutTitle,
-                        style = MaterialTheme.typography.titleLarge,
-                        maxLines = 2,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                },
-                navigationIcon = { IconButton(onClick = onBack) { Icon(AppIcons.ArrowBack, strings.aboutPage.aboutBack) } },
+            FlexibleTopBar(
+                title = strings.aboutPage.aboutTitle,
+                navigation = { IconButton(onClick = onBack) { Icon(AppIcons.ArrowBack, strings.aboutPage.aboutBack) } },
                 actions = { LanguageToggle(language, onLanguage, Modifier.padding(end = Spacing.sm)) },
             )
         },

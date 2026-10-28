@@ -8,6 +8,14 @@ actual fun dialNumber(number: String) = copy(number)
 
 actual fun shareText(text: String, title: String) = copy(text)
 
+actual fun openUrl(url: String) {
+    try {
+        window.open(url, "_blank", "noopener,noreferrer")
+    } catch (_: Throwable) {
+        // Pop-up blocked: nothing to do.
+    }
+}
+
 actual val copiesToClipboard: Boolean = true
 
 private fun copy(text: String) {

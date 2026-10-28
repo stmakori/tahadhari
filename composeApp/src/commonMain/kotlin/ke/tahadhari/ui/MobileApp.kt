@@ -134,33 +134,16 @@ fun MobileApp(
         }
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                strings.appName,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.semantics { heading() },
-                            )
-                            Text(
-                                when {
-                                    countyBack && addingWatch -> strings.watch.addTitle
-                                    countyBack && viewing != null -> strings.countyLabel(viewing.name)
-                                    countyBack -> strings.countyLabel(county!!.name)
-                                    guideBack -> guide!!.content(language).title
-                                    else -> strings.tagline
-                                },
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
+                FlexibleTopBar(
+                    title = strings.appName,
+                    subtitle = when {
+                        countyBack && addingWatch -> strings.watch.addTitle
+                        countyBack && viewing != null -> strings.countyLabel(viewing.name)
+                        countyBack -> strings.countyLabel(county!!.name)
+                        guideBack -> guide!!.content(language).title
+                        else -> strings.tagline
                     },
-                    navigationIcon = {
+                    navigation = {
                         if (countyBack && addingWatch) IconButton(onClick = { addingWatch = false }) { Icon(AppIcons.ArrowBack, strings.watch.cancelAdd) }
                         else if (countyBack && viewing != null) IconButton(onClick = { viewingCode = null }) { Icon(AppIcons.ArrowBack, strings.watch.backToMine) }
                         else if (countyBack) IconButton(onClick = { selectCounty(null) }) { Icon(AppIcons.ArrowBack, strings.allCounties) }
@@ -230,7 +213,9 @@ private fun RowScope.TabItem(current: MobileTab, tab: MobileTab, icon: ImageVect
         selected = current == tab,
         onClick = { onSelect(tab) },
         icon = { Icon(icon, null) },
-        label = { Text(label) },
+        // Three labels share the width, so a 2x "Emergency" cannot fit. Material's own guidance is to cap
+        // text scaling in bottom navigation; the rest of the screen keeps the full system scale.
+        label = { CappedFontScale { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) } },
     )
 }
 

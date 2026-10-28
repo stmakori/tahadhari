@@ -1,5 +1,8 @@
 package ke.tahadhari.ui
 
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -91,6 +94,20 @@ private val DarkRisk = RiskPalette(
 val LocalRiskPalette = staticCompositionLocalOf { LightRisk }
 
 /** Spacing scale. Use these instead of ad-hoc dp values so screens share one rhythm. */
+/** [base] grown with the system font scale (1x to 2x), for shapes that hold text, such as number circles. */
+@Composable
+fun scaledWithFont(base: Dp): Dp = base * LocalDensity.current.fontScale.coerceIn(1f, 2f)
+
+/**
+ * Caps the system font scale for [content]. Only for short labels squeezed into a fixed share of the width
+ * (bottom navigation, table column headers) where a word cannot wrap; body text keeps the full scale.
+ */
+@Composable
+fun CappedFontScale(max: Float = 1.3f, content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale.coerceAtMost(max)), content = content)
+}
+
 object Spacing {
     val xs = 4.dp
     val sm = 8.dp
