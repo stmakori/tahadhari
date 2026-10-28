@@ -28,6 +28,13 @@ with clear advice on what to do.
   and "I'm safe" / "I need help" messages shared through any app.
 - **Share this alert**: a short WhatsApp/SMS-ready summary (level, main reason, top actions,
   emergency numbers) for family groups, built from the offline text, never the AI's.
+- **Read aloud**: speaks the level, a short explanation and what to do (offline template text, under a
+  minute). Android uses the phone's text-to-speech (Swahili if a voice is installed, otherwise English
+  with a note); desktop uses the OS voice (Windows PowerShell, macOS `say`, Linux `espeak-ng`) and the
+  web uses the browser's speech synthesis. The button is hidden where no speech is available.
+- **Forecast for your exact location** (optional, Android): on a county screen, switch from the county
+  town's forecast to your own point. Coordinates are rounded to about 1 km before the request, are not
+  saved, and the option is refused if you are outside Kenya or over 100 km from that county's town.
 - **Home-screen widget** with your county's risk, refreshed every 3 hours (shows "No data" rather
   than Low when the forecast can't be loaded).
 - Optional **notification when your county rises to High or Severe** (off by default, once per
@@ -140,9 +147,12 @@ settings, set **Pages → Source** to **GitHub Actions**.
    shown with a warning, never an error that looks like "Low".
 3. **Phone flow**: on Android (or with `--args="--mobile"`), pick a county, switch to **SW**, open
    **Safety → Floods**, then **Emergency → I'm safe** to share a check-in message.
-4. **Widget**: on Android, choose a county in the app, then long-press the home screen →
+4. **Read aloud and your location**: on a county screen press **Read aloud** (press again to stop; on
+   desktop it needs Windows, macOS or `espeak-ng`). On Android press **Use my exact location**, then
+   **Back to ... HQ forecast** to switch back.
+5. **Widget**: on Android, choose a county in the app, then long-press the home screen →
    Widgets → Tahadhari.
-5. **Screenshots** of every screen with sample data (no network needed):
+6. **Screenshots** of every screen with sample data (no network needed):
    `TAHADHARI_SCREENSHOTS=1 ./gradlew :composeApp:desktopTest`, output in `composeApp/build/screenshots/`.
 
 ### Release builds

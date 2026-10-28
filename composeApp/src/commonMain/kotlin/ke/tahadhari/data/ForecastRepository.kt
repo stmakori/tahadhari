@@ -9,6 +9,7 @@ import ke.tahadhari.domain.Dates
 import ke.tahadhari.domain.DailyRain
 import ke.tahadhari.domain.Freshness
 import ke.tahadhari.domain.RiverOutlook
+import ke.tahadhari.domain.UserPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -55,7 +56,7 @@ class ForecastRepository(
     }
 
     private suspend fun fetch(county: County): CachedForecast = coroutineScope {
-        val rainCall = async { api.dailyRainfall(county.location).daily }
+        val rainCall = async { api.dailyRainfall(queryPoint(county)).daily }
         val floodCall = county.riverPoint?.let { point ->
             async {
                 try {
@@ -86,7 +87,7 @@ class ForecastRepository(
         var flood = freshFlood
         var floodAt: Long? = if (flood != null) now else null
         if (expectsFlood && flood == null) {
-            cache.read(county.code)?.takeIf { cached ->
+            cache.read(county.code, ForecastCache.pointOf(county))?.takeIf { cached ->
                 val at = cached.floodFetchedAtMillis
                 cached.flood != null && at != null && !Freshness.isTooOldToShow(at, now)
             }?.let { flood = it.flood; floodAt = it.floodFetchedAtMillis }
@@ -97,6 +98,8 @@ class ForecastRepository(
             rainfall = rain,
             flood = flood,
             floodFetchedAtMillis = floodAt,
+            pointLatitude = ForecastCache.pointOf(county)?.latitude,
+            pointLongitude = ForecastCache.pointOf(county)?.longitude,
         )
     }
 
@@ -118,7 +121,7 @@ class ForecastRepository(
         val rainJobs = counties.chunked(MAX_POINTS_PER_CALL).map { chunk ->
             async {
                 try {
-                    val responses = api.dailyRainfallBatch(chunk.map { it.location })
+                    val responses = api.dailyRainfallBatch(chunk.map { queryPoint(it) })
                     check(responses.size == chunk.size) { "Expected ${chunk.size} rainfall results but got ${responses.size}" }
                     chunk.zip(responses).forEach { (county, response) ->
                         val daily = response?.daily
@@ -173,7 +176,7 @@ class ForecastRepository(
     }
 
     private suspend fun fromCache(county: County): ForecastResult? {
-        val cached = cache.read(county.code) ?: return null
+        val cached = cache.read(county.code, ForecastCache.pointOf(county)) ?: return null
         val today = Dates.isoDateFromEpochMillis(nowMillis())
         val forecast = buildForecast(county, cached.rainfall, cached.flood, today)
         if (forecast.days.isEmpty()) return null // every cached day is already in the past
@@ -185,6 +188,10 @@ class ForecastRepository(
     }
 
     companion object {
+        /** Where rainfall is requested: the county HQ, or the user's point rounded to ~1 km (privacy). */
+        private fun queryPoint(county: County): GeoPoint =
+            if (ForecastCache.pointOf(county) != null) UserPoint.round(county.location) else county.location
+
         /**
          * Rebuilds a [CountyForecast] from raw API data. When [today] is given (cached data),
          * days before it are dropped because they are no longer a forecast.

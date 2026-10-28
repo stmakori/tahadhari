@@ -1,6 +1,7 @@
 package ke.tahadhari.platform
 
 import androidx.compose.runtime.Composable
+import ke.tahadhari.domain.Language
 
 // Thin platform features. All decisions (what to say, which county) stay in common code.
 
@@ -48,3 +49,28 @@ expect fun rememberNotificationRequester(onResult: (allowed: Boolean) -> Unit): 
  * background refresh that checks the forecast. No-op on desktop.
  */
 expect fun onRiskAlertsChanged(enabled: Boolean)
+
+/** What happened to a [speakAloud] request. Reported on any thread. */
+enum class SpeechEvent {
+    /** Speaking in the requested language. */
+    STARTED,
+    /** No voice for the requested language (Swahili): speaking the English fallback text instead. */
+    STARTED_ENGLISH_FALLBACK,
+    /** Speech ended, or was stopped by [stopSpeaking]. */
+    FINISHED,
+    /** Speech could not start or broke off. */
+    FAILED,
+}
+
+/** True where [speakAloud] can work (Android text-to-speech, desktop OS speech, browser speech synthesis). */
+expect fun isSpeechAvailable(): Boolean
+
+/**
+ * Reads [text] aloud in [language]. If the device has no voice for that language, reads
+ * [englishFallback] instead and reports [SpeechEvent.STARTED_ENGLISH_FALLBACK]. Replaces any speech
+ * in progress. Ends with [SpeechEvent.FINISHED] or [SpeechEvent.FAILED] (not reported after an explicit [stopSpeaking] on Android).
+ */
+expect fun speakAloud(text: String, language: Language, englishFallback: String, onEvent: (SpeechEvent) -> Unit)
+
+/** Stops speech started by [speakAloud] and releases the engine. Safe to call at any time. */
+expect fun stopSpeaking()

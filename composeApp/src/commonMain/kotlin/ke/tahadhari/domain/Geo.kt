@@ -51,3 +51,30 @@ class NearestHqLocator(private val counties: List<County>) : CountyLocator {
 /** Convenience wrapper: county whose HQ is nearest to ([latitude], [longitude]), or null outside Kenya. */
 fun nearestCounty(latitude: Double, longitude: Double, counties: List<County>): County? =
     NearestHqLocator(counties).locate(GeoPoint(latitude, longitude))
+
+/**
+ * Rules for using the user's own point instead of the county HQ. Pure, so they are testable.
+ * Privacy: coordinates are rounded to 2 decimals (about 1 km) before any network call or storage.
+ */
+object UserPoint {
+    /** The point must be within this distance of the county's main town, or the option is not offered. */
+    const val MAX_DISTANCE_KM = 100.0
+
+    /** Rounds both coordinates to 2 decimals (about 1.1 km north-south). */
+    fun round(p: GeoPoint): GeoPoint = GeoPoint(round2(p.latitude), round2(p.longitude))
+
+    /**
+     * The rounded point to forecast for, or null when it should not be offered: outside Kenya, or
+     * more than [MAX_DISTANCE_KM] from [county]'s HQ (the user is probably not in that county).
+     */
+    fun forCounty(raw: GeoPoint, county: County): GeoPoint? {
+        if (!Geo.isInKenyaBox(raw)) return null
+        val rounded = round(raw)
+        return rounded.takeIf { Geo.distanceKm(it, county.location) <= MAX_DISTANCE_KM }
+    }
+
+    private fun round2(x: Double): Double = kotlin.math.round(x * 100.0) / 100.0 + 0.0 // + 0.0 turns -0.0 into 0.0
+}
+
+/** The same county, forecast for [point] instead of its HQ. River point, hotspots and landslide data are kept. */
+fun County.atPoint(point: GeoPoint): County = copy(location = point)
