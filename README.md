@@ -10,6 +10,8 @@ with clear advice on what to do.
 - **Android**: pick your county, see the 7-day rainfall outlook, flood risk and what to do.
 - **Desktop dashboard**: see all 47 counties ranked by risk, for county disaster teams and responders.
 
+![Tahadhari walkthrough: intro, county picker, Tana River in English and Swahili, safety guide, emergency, dashboard](docs/demo.gif)
+
 ## Features
 
 **Android app (residents)**
@@ -23,8 +25,13 @@ with clear advice on what to do.
   farms, lightning and flash floods, with sources.
 - **Emergency** tab: tap-to-dial 999, 112 and 1199 (Kenya Red Cross), your county's known hotspots,
   and "I'm safe" / "I need help" messages shared through any app.
+- **Share this alert**: a short WhatsApp/SMS-ready summary (level, main reason, top actions,
+  emergency numbers) for family groups, built from the offline text, never the AI's.
 - **Home-screen widget** with your county's risk, refreshed every 3 hours (shows "No data" rather
   than Low when the forecast can't be loaded).
+- Optional **notification when your county rises to High or Severe** (off by default, once per
+  rise, never from saved or failed data).
+- Crash reports stay on the phone in a local file; you choose whether to share one.
 - First-launch intro, an **About / How it works** page (risk thresholds, data sources, privacy),
   and pull-to-refresh.
 - English and Swahili throughout, light and dark themes, screen-reader labels, and layouts tested
@@ -98,8 +105,10 @@ the JDK so it picks up the variable.
   `TAHADHARI_KEYSTORE_*` environment variables. Without them the APK is debug-signed, with a
   warning, and must not be published.
 - CI (`.github/workflows/ci.yml`) runs every test and builds the APK and a Linux installer on each
-  push. Pushing a `v*` tag runs `release.yml`, which builds the APK, MSI, DMG and DEB and attaches
-  them to a GitHub Release.
+  push, and runs an Android emulator smoke test (picks a county, opens each tab, and checks "Low" is
+  never shown with an error). Pushing a `v*` tag runs `release.yml`, which builds the APK, MSI, DMG
+  and DEB and attaches them to a GitHub Release.
+- [`docs/demo-script.md`](docs/demo-script.md) is a shot-by-shot script for the demo video.
 
 ## AI explanations (optional)
 
@@ -129,6 +138,30 @@ official KMSA criteria):
 | Wettest single day | ≥ 20 mm | ≥ 50 mm | ≥ 80 mm |
 | Wettest 3-day window | ≥ 40 mm | ≥ 80 mm | ≥ 120 mm |
 | River forecast peak vs 30-day baseline | – | ≥ 2× | ≥ 3× |
+| Landslide: wettest 3-day window, in landslide-prone counties only | – | ≥ 50 mm | ≥ 100 mm |
+
+The river signal is ignored where the recent flow is under 5 m³/s, because a forecast grid cell that
+misses the channel gives meaningless ratios. Landslide-prone counties (Murang'a, West Pokot,
+Elgeyo-Marakwet, Nandi, Kericho, Taita-Taveta, Nyeri, Bungoma, Kiambu) are marked only where a
+reported landslide or a susceptibility study backs it; sources are in `Counties.kt`.
+
+### How well does it work?
+
+[`docs/validation.md`](docs/validation.md) replays the March–May 2024 floods (about 290 deaths by
+mid-May) through the real `RiskEngine`, using archived ECMWF and GFS forecasts and ERA5 observed
+rainfall. It reports misses and false alarms as plainly as hits:
+
+- **Rainfall alone is a weak detector at county scale.** With the shipped thresholds the ECMWF
+  forecast reached High in 0 of 7 documented events, and even perfectly observed rain reached
+  High in 0 of 7. The rain at a county's grid point was far below what fell at the flood sites.
+- **The river signal was the most promising**, but the Tana River and Garissa points were on dry
+  grid cells. They have been moved to cells that carry the river (≈ 716 m³/s mean), and a 5 m³/s
+  floor was added. On the right cells, the hindcast ratio was 4–8× in the days before the Garissa
+  floods.
+- **Lowering the thresholds roughly doubled false alarms** for little gain, so they were not changed.
+
+That is why every screen says Tahadhari is guidance, not an official warning. Re-run it with
+`TAHADHARI_BACKTEST=1 ./gradlew :composeApp:desktopTest --tests "ke.tahadhari.BacktestRunnerTest"`.
 
 ## Data sources
 
