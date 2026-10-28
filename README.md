@@ -170,6 +170,21 @@ For Android, the emulator reaches your computer at `10.0.2.2`, which is the defa
 phone, deploy the server with HTTPS and add `tahadhari.proxyUrl=https://your-server` to
 `local.properties`.
 
+The server uses `claude-haiku-5-5` by default (override with `TAHADHARI_MODEL`).
+
+**Web build.** The browser version uses AI only when a server URL is configured, otherwise it shows
+the offline text. Two settings are needed:
+
+- On the server, set `TAHADHARI_ALLOWED_ORIGINS` to the full origin of the web app, for example
+  `https://user.github.io` (comma-separate several). The default allows only the local dev server
+  (`http://localhost:8080`, `http://127.0.0.1:8080`). Only `POST /v1/explain` with the
+  `Content-Type` header is allowed, without credentials.
+- In the web page, set `<meta name="tahadhari-proxy-url" content="https://your-server">` in
+  `composeApp/src/wasmJsMain/resources/index.html`. Blank means no AI. Only `https://` URLs are
+  accepted (plus `http://localhost` and `http://127.0.0.1` for development). The GitHub Pages
+  workflow fills this tag from the repository variable `TAHADHARI_PROXY_URL` (Settings, Secrets
+  and variables, Actions, Variables); leave it unset for offline text.
+
 The AI only receives forecast facts calculated by the app. It never decides the risk level.
 
 ## How risk is calculated
