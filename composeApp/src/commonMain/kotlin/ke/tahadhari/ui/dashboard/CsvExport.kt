@@ -5,16 +5,6 @@ import ke.tahadhari.domain.Dates
 import ke.tahadhari.ui.LoadState
 import kotlin.math.roundToLong
 
-/** What the dashboard hands the platform to save: file content, suggested name and dialog title. */
-data class CsvExportRequest(val csv: String, val suggestedFileName: String, val dialogTitle: String)
-
-/** Outcome of saving, shown as a snackbar (nothing for [Cancelled]). */
-sealed interface CsvExportResult {
-    data class Saved(val fileName: String) : CsvExportResult
-    data object Cancelled : CsvExportResult
-    data class Failed(val message: String) : CsvExportResult
-}
-
 /**
  * Builds the dashboard CSV export (RFC 4180: comma-separated, CRLF line endings, fields with
  * commas, quotes or line breaks quoted and quotes doubled). Pure, so it is unit-tested.

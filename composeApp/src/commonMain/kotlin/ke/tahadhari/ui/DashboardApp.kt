@@ -1,6 +1,7 @@
 package ke.tahadhari.ui
 
 import androidx.compose.foundation.focusable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyListState
@@ -18,7 +19,9 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,13 +30,16 @@ import ke.tahadhari.domain.AlertExplainer
 import ke.tahadhari.domain.RiskLevel
 import ke.tahadhari.ui.dashboard.CountyMap
 import ke.tahadhari.ui.dashboard.CountySearchField
+import ke.tahadhari.ui.dashboard.BriefingExport
 import ke.tahadhari.ui.dashboard.CsvExport
-import ke.tahadhari.ui.dashboard.CsvExportRequest
-import ke.tahadhari.ui.dashboard.CsvExportResult
+import ke.tahadhari.ui.dashboard.DashboardSettingsStore
 import ke.tahadhari.ui.dashboard.DashboardState
+import ke.tahadhari.ui.dashboard.FileExportRequest
+import ke.tahadhari.ui.dashboard.FileExportResult
 import ke.tahadhari.ui.dashboard.MapLegend
 import ke.tahadhari.ui.dashboard.RankedList
 import ke.tahadhari.ui.dashboard.SummaryBar
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 /** Width at which map, list and detail fit side by side. */
@@ -44,17 +50,29 @@ private val ThreePaneMinWidth = 1400.dp
  * counties (at most 6 requests at a time), shows them on a risk map and a ranked list, with the
  * selected county's details alongside.
  *
- * @param onExportCsv saves the CSV export (desktop: a file dialog). Null hides the export button.
+ * Remembers language, selected county, filter and the auto-refresh toggle between runs, and reloads
+ * everything every 3 hours while open (when the toggle is on).
+ *
+ * @param onExport saves an exported file, CSV or HTML briefing (desktop: a file dialog). Null hides the export menu.
+ * @param onAbout opens the About dialog (wired by the caller).
  */
 @Composable
 fun DashboardApp(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    onExportCsv: (suspend (CsvExportRequest) -> CsvExportResult)? = null,
+    onExport: (suspend (FileExportRequest) -> FileExportResult)? = null,
+    onAbout: () -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
     val state = remember { DashboardState(scope) }
-    LaunchedEffect(state) { state.refresh() }
-    DashboardScreen(state, darkTheme, onExportCsv = onExportCsv)
+    LaunchedEffect(state) {
+        val settingsStore = DashboardSettingsStore(AppGraph.store)
+        state.restore(settingsStore.load())
+        state.refresh()
+        // Save whenever a remembered setting changes (the first value is what we just loaded).
+        snapshotFlow { state.settings }.drop(1).collect { settingsStore.save(it) }
+    }
+    LaunchedEffect(state, state.autoRefresh) { state.autoRefreshLoop() }
+    DashboardScreen(state, darkTheme, onExport = onExport, onAbout = onAbout)
 }
 
 /** The dashboard UI for a given [state]. Screenshot tests call this with fake data and no network. */
@@ -64,7 +82,8 @@ fun DashboardScreen(
     state: DashboardState,
     darkTheme: Boolean = isSystemInDarkTheme(),
     explainer: AlertExplainer = AppGraph.explainer,
-    onExportCsv: (suspend (CsvExportRequest) -> CsvExportResult)? = null,
+    onExport: (suspend (FileExportRequest) -> FileExportResult)? = null,
+    onAbout: () -> Unit = {},
 ) {
     TahadhariTheme(darkTheme) {
         val strings = Strings.of(state.language)
@@ -85,21 +104,33 @@ fun DashboardScreen(
         }
         LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
 
-        val export: (() -> Unit)? = onExportCsv?.let { save ->
+        fun exporter(build: (nowMillis: Long) -> FileExportRequest): (() -> Unit)? = onExport?.let { save ->
             {
                 scope.launch {
-                    val request = CsvExportRequest(
-                        csv = CsvExport.build(state.ranked, state.states, now),
-                        suggestedFileName = CsvExport.fileName(now),
-                        dialogTitle = strings.exportCsv,
-                    )
-                    when (val r = save(request)) {
-                        is CsvExportResult.Saved -> snackbar.showSnackbar(strings.exportSaved(r.fileName))
-                        is CsvExportResult.Failed -> snackbar.showSnackbar(strings.exportFailed)
-                        CsvExportResult.Cancelled -> Unit
+                    when (val r = save(build(AppGraph.nowMillis()))) {
+                        is FileExportResult.Saved -> snackbar.showSnackbar(strings.exportSaved(r.fileName))
+                        is FileExportResult.Failed -> snackbar.showSnackbar(strings.exportFailed)
+                        FileExportResult.Cancelled -> Unit
                     }
                 }
             }
+        }
+        val exportCsv = exporter { t ->
+            FileExportRequest(
+                content = CsvExport.build(state.ranked, state.states, t),
+                suggestedFileName = CsvExport.fileName(t),
+                dialogTitle = strings.exportCsv,
+                extension = "csv",
+                utf8Bom = true,
+            )
+        }
+        val exportBriefing = exporter { t ->
+            FileExportRequest(
+                content = BriefingExport.build(state.counties, state.states, state.language, t),
+                suggestedFileName = BriefingExport.fileName(t),
+                dialogTitle = strings.exportBriefingDialog,
+                extension = "html",
+            )
         }
 
         Scaffold(
@@ -118,7 +149,7 @@ fun DashboardScreen(
                 },
         ) { padding ->
             Column(Modifier.padding(padding).fillMaxSize()) {
-                DashboardHeader(state, strings, now, export)
+                DashboardHeader(state, strings, now, exportCsv, exportBriefing, onAbout)
                 SummaryBar(
                     counts = state.counts,
                     filter = state.filter,
@@ -161,7 +192,14 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun DashboardHeader(state: DashboardState, strings: Strings, now: Long, onExport: (() -> Unit)?) {
+private fun DashboardHeader(
+    state: DashboardState,
+    strings: Strings,
+    now: Long,
+    onExportCsv: (() -> Unit)?,
+    onExportBriefing: (() -> Unit)?,
+    onAbout: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = Spacing.xl, vertical = Spacing.lg),
         verticalAlignment = Alignment.CenterVertically,
@@ -174,11 +212,20 @@ private fun DashboardHeader(state: DashboardState, strings: Strings, now: Long, 
                 maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() },
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(AppIcons.Schedule, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (state.refreshing) {
+                    // Small progress indicator: rows keep their data and update in place.
+                    CircularProgressIndicator(
+                        Modifier.size(14.dp).semantics { contentDescription = strings.refreshingLabel },
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(AppIcons.Schedule, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 Spacer(Modifier.width(Spacing.xs))
                 val updated = state.oldestUpdate?.let { strings.updatedText(it, now) } ?: strings.notUpdatedYet
                 Text(
-                    "$updated · ${strings.loaded(state.doneCount, state.counties.size)}",
+                    if (state.refreshing) "$updated · ${strings.refreshingProgress(state.refreshDone, state.counties.size)}"
+                    else "$updated · ${strings.loaded(state.doneCount, state.counties.size)}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1, overflow = TextOverflow.Ellipsis,
@@ -186,11 +233,25 @@ private fun DashboardHeader(state: DashboardState, strings: Strings, now: Long, 
             }
         }
         Spacer(Modifier.width(Spacing.md))
-        if (onExport != null) {
-            OutlinedButton(onClick = onExport, enabled = state.doneCount > 0, modifier = Modifier.heightIn(min = 40.dp)) {
-                Icon(AppIcons.Download, null, Modifier.size(18.dp))
-                Spacer(Modifier.width(Spacing.sm))
-                Text(strings.exportCsv)
+        if (onExportCsv != null || onExportBriefing != null) {
+            var open by remember { mutableStateOf(false) }
+            Box {
+                OutlinedButton(onClick = { open = true }, enabled = state.doneCount > 0, modifier = Modifier.heightIn(min = 40.dp)) {
+                    Icon(AppIcons.Download, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(Spacing.sm))
+                    Text(strings.export)
+                    Icon(AppIcons.ArrowDropDown, null, Modifier.size(18.dp))
+                }
+                DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+                    onExportBriefing?.let {
+                        DropdownMenuItem(text = { Text(strings.exportBriefing) }, onClick = { open = false; it() },
+                            leadingIcon = { Icon(AppIcons.Document, null, Modifier.size(18.dp)) })
+                    }
+                    onExportCsv?.let {
+                        DropdownMenuItem(text = { Text(strings.exportCsv) }, onClick = { open = false; it() },
+                            leadingIcon = { Icon(AppIcons.Download, null, Modifier.size(18.dp)) })
+                    }
+                }
             }
             Spacer(Modifier.width(Spacing.sm))
         }
@@ -199,8 +260,32 @@ private fun DashboardHeader(state: DashboardState, strings: Strings, now: Long, 
             Spacer(Modifier.width(Spacing.sm))
             Text(strings.refresh)
         }
-        Spacer(Modifier.width(Spacing.md))
+        Spacer(Modifier.width(Spacing.xs))
+        TextButton(onClick = onAbout, modifier = Modifier.heightIn(min = 40.dp)) {
+            Icon(AppIcons.Info, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(Spacing.xs))
+            Text(strings.about)
+        }
+        SettingsMenu(state, strings)
+        Spacer(Modifier.width(Spacing.xs))
         LanguageToggle(state.language, { state.language = it })
+    }
+}
+
+/** Overflow menu with the dashboard settings (for now: automatic refresh). [open] is exposed for screenshots. */
+@Composable
+internal fun SettingsMenu(state: DashboardState, strings: Strings, initiallyOpen: Boolean = false) {
+    var open by remember { mutableStateOf(initiallyOpen) }
+    Box {
+        IconButton(onClick = { open = true }) { Icon(AppIcons.MoreVert, strings.settings) }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(
+                text = { Text(strings.autoRefresh) },
+                onClick = { state.autoRefresh = !state.autoRefresh },
+                leadingIcon = { Checkbox(checked = state.autoRefresh, onCheckedChange = null) },
+                modifier = Modifier.semantics { selected = state.autoRefresh },
+            )
+        }
     }
 }
 
@@ -209,7 +294,7 @@ private fun MapPane(state: DashboardState, strings: Strings, modifier: Modifier)
     Surface(modifier, shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerLow) {
         Column(Modifier.padding(Spacing.lg), verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(strings.floodRisk, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Text(strings.floodRisk, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).semantics { heading() })
                 Text(strings.mapHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             CountyMap(

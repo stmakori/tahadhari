@@ -13,9 +13,11 @@ import ke.tahadhari.domain.RiverOutlook
 import ke.tahadhari.domain.TemplateExplainer
 import ke.tahadhari.ui.DashboardScreen
 import ke.tahadhari.ui.LoadState
-import ke.tahadhari.ui.dashboard.CsvExportResult
+import ke.tahadhari.ui.dashboard.BriefingExport
 import ke.tahadhari.ui.dashboard.DashboardState
+import ke.tahadhari.ui.dashboard.FileExportResult
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.skia.EncodedImageFormat
 import java.io.File
@@ -80,7 +82,55 @@ class DashboardScreenshotTest {
     @Test
     fun wide() = listOf(false, true).forEach { dark ->
         val state = fakeState().apply { selectedCode = 4 }
-        shoot("dashboard-wide", 1500, 900, dark) { DashboardScreen(state, dark, explainer = TemplateExplainer(), onExportCsv = { CsvExportResult.Cancelled }) }
+        shoot("dashboard-wide", 1500, 900, dark) { DashboardScreen(state, dark, explainer = TemplateExplainer(), onExport = { FileExportResult.Cancelled }) }
+    }
+
+    /** Header overflow menu open (auto-refresh toggle), opened by clicking the three-dots button. */
+    @OptIn(ExperimentalComposeUiApi::class)
+    @Test
+    fun settingsMenuOpen() {
+        if (!enabled) return
+        val state = fakeState().apply { selectedCode = 4 }
+        ImageComposeScene(1500 * 2, 900 * 2, Density(2f)) {
+            DashboardScreen(state, false, explainer = TemplateExplainer(), onExport = { FileExportResult.Cancelled })
+        }.use { scene ->
+            var t = 0L
+            repeat(10) { scene.render(t); t += 50_000_000L }
+            val p = Offset(1500f - 24f - 100f - 4f - 24f, 46f) * 2f
+            scene.sendPointerEvent(PointerEventType.Press, p)
+            scene.sendPointerEvent(PointerEventType.Release, p)
+            repeat(20) { scene.render(t); t += 50_000_000L }
+            File(outDir, "dashboard-settings-menu-light.png").writeBytes(scene.render(t).encodeToData(EncodedImageFormat.PNG)!!.bytes)
+        }
+    }
+
+    /** Mid-refresh: rows keep their data, the header shows a spinner and "Refreshing: n of 47". */
+    @Test
+    fun refreshingInPlace() {
+        val state = fakeState()
+        state.selectedCode = 42
+        // Counties 1-19 finish; the rest stay in flight. Nothing flips back to "Loading".
+        val busy = DashboardState(
+            CoroutineScope(Dispatchers.Unconfined),
+            loader = { c -> if (c.code < 20) (state.states[c.code] as? LoadState.Ready)?.copy(updatedAtMillis = System.currentTimeMillis()) ?: LoadState.Failed("offline") else awaitCancellation() },
+            clock = { System.currentTimeMillis() },
+        )
+        state.states.forEach { (k, v) -> if (v !is LoadState.Loading) busy.states[k] = v }
+        busy.selectedCode = 42
+        busy.refresh()
+        shoot("dashboard-refreshing", 1500, 900, false) { DashboardScreen(busy, false, explainer = TemplateExplainer(), onExport = { FileExportResult.Cancelled }) }
+    }
+
+    /** Writes `composeApp/build/briefing-sample.html` from the same fake data. */
+    @Test
+    fun sampleBriefing() {
+        if (!enabled) return
+        val state = fakeState()
+        val html = BriefingExport.build(state.counties, state.states, Language.ENGLISH, System.currentTimeMillis())
+        File("build/briefing-sample.html").apply { parentFile.mkdirs() }.writeText(html, Charsets.UTF_8)
+        File("build/briefing-sample-sw.html").writeText(
+            BriefingExport.build(state.counties, state.states, Language.SWAHILI, System.currentTimeMillis()), Charsets.UTF_8,
+        )
     }
 
     @Test

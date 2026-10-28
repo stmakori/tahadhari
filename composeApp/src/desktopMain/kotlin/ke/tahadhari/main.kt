@@ -7,8 +7,8 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import ke.tahadhari.ui.DashboardApp
 import ke.tahadhari.ui.MobileRoot
-import ke.tahadhari.ui.dashboard.CsvExportRequest
-import ke.tahadhari.ui.dashboard.CsvExportResult
+import ke.tahadhari.ui.dashboard.FileExportRequest
+import ke.tahadhari.ui.dashboard.FileExportResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.swing.Swing
@@ -30,32 +30,37 @@ fun main(args: Array<String>) = application {
             MobileRoot()
         } else {
             LaunchedEffect(Unit) { window.minimumSize = Dimension(960, 640) }
-            DashboardApp(onExportCsv = { saveCsv(window, it) })
+            DashboardApp(onExport = { saveFile(window, it) })
         }
     }
 }
 
 /**
- * Asks where to save the CSV with the native "Save" dialog on the AWT thread, then writes it as
- * UTF-8 with a byte-order mark so spreadsheet apps read names such as Murang'a correctly.
+ * Asks where to save the exported file (CSV or HTML briefing) with the native "Save" dialog on the
+ * AWT thread, then writes it as UTF-8, with a byte-order mark when the request asks for one
+ * (spreadsheet apps need it to read names such as Murang'a correctly).
  */
-private suspend fun saveCsv(owner: Frame, request: CsvExportRequest): CsvExportResult {
+private suspend fun saveFile(owner: Frame, request: FileExportRequest): FileExportResult {
+    val suffix = "." + request.extension
     val target = withContext(Dispatchers.Swing) {
         val dialog = FileDialog(owner, request.dialogTitle, FileDialog.SAVE).apply {
             file = request.suggestedFileName
+            setFilenameFilter { _, name -> name.endsWith(suffix, ignoreCase = true) }
             isVisible = true // modal: returns when the user picks a file or cancels
         }
         val dir = dialog.directory
         val name = dialog.file
         if (dir == null || name == null) null
-        else File(dir, if (name.endsWith(".csv", ignoreCase = true)) name else "$name.csv")
-    } ?: return CsvExportResult.Cancelled
+        else File(dir, if (name.endsWith(suffix, ignoreCase = true)) name else name + suffix)
+    } ?: return FileExportResult.Cancelled
     return try {
-        withContext(Dispatchers.IO) { target.writeText("﻿" + request.csv, Charsets.UTF_8) }
-        CsvExportResult.Saved(target.name)
+        withContext(Dispatchers.IO) {
+            target.writeText((if (request.utf8Bom) "\uFEFF" else "") + request.content, Charsets.UTF_8)
+        }
+        FileExportResult.Saved(target.name)
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
-        CsvExportResult.Failed(e.message ?: e::class.simpleName ?: "error")
+        FileExportResult.Failed(e.message ?: e::class.simpleName ?: "error")
     }
 }
