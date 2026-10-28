@@ -23,9 +23,9 @@ E4,x_kitengela,era5,0,0,0,0,0,0,0
 E5,c42,ecmwf_ifs025,0,1,1,1,0,0,0
 E5,c42,gfs_seamless,2,0,0,1,1,0,1
 E5,c42,era5,0,0,0,0,0,0,0
-E6,c7,ecmwf_ifs025,0,0,0,0,0,0,0
-E6,c7,gfs_seamless,0,0,0,2,0,0,0
-E6,c7,era5,0,0,0,0,0,0,0
-E7,c4,ecmwf_ifs025,0,0,0,0,0,0,0
-E7,c4,gfs_seamless,0,0,0,0,0,0,0
-E7,c4,era5,0,0,0,0,0,0,0
+E6,c7,ecmwf_ifs025,3,3,3,3,3,3,3
+E6,c7,gfs_seamless,3,3,3,3,3,3,3
+E6,c7,era5,3,3,3,3,3,3,3
+E7,c4,ecmwf_ifs025,3,3,3,3,3,2,2
+E7,c4,gfs_seamless,3,3,3,3,3,2,2
+E7,c4,era5,3,3,3,3,3,2,2
