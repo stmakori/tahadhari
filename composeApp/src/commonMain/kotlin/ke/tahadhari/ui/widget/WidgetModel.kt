@@ -62,6 +62,7 @@ private fun reasonOf(state: LoadState.Ready): WidgetReason =
     when (val top = state.assessment.reasons.firstOrNull()) {
         is RiskReason.HeavyDay -> WidgetReason.WettestDay(top.mm.roundToInt())
         is RiskReason.WetSpell -> WidgetReason.WetSpell(top.totalMm.roundToInt())
+        is RiskReason.LandslideRisk -> WidgetReason.WetSpell(top.totalMm.roundToInt())
         is RiskReason.RiverRising -> WidgetReason.RiverRising(oneDecimal(top.ratio))
         null -> state.assessment.wettestDay?.let { WidgetReason.WettestDay(it.precipitationMm.roundToInt()) }
             ?: WidgetReason.Quiet

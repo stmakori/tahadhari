@@ -64,6 +64,7 @@ class AiExplainer(
                         is RiskReason.HeavyDay -> "HEAVY_DAY"
                         is RiskReason.WetSpell -> "WET_SPELL"
                         is RiskReason.RiverRising -> "RIVER_RISING"
+                        is RiskReason.LandslideRisk -> "LANDSLIDE"
                     }
                 },
             )

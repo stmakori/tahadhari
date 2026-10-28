@@ -13,8 +13,11 @@ import ke.tahadhari.data.Counties
 import ke.tahadhari.data.County
 import ke.tahadhari.domain.Language
 import ke.tahadhari.ui.LoadState
+import ke.tahadhari.ui.loadCounties
 import ke.tahadhari.ui.loadCounty
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -28,7 +31,9 @@ const val AUTO_REFRESH_INTERVAL_MILLIS: Long = 3L * 60 * 60 * 1000
  * State holder for the desktop dashboard: per-county load states, selection, search and filter.
  * Network work runs in [scope] (from `rememberCoroutineScope()`), never in composition.
  *
- * @param loader loads one county; risk always comes from RiskEngine inside it. Tests pass a fake.
+ * @param loader loads one county (used by [retry], and by refresh when there is no [batchLoader]);
+ *   risk always comes from RiskEngine inside it. Tests pass a fake.
+ * @param batchLoader loads many counties with a few batched requests (used by a full [refresh]).
  * @param clock current time in epoch millis; tests pass a fake.
  * @param autoRefreshIntervalMillis delay between automatic reloads (see [autoRefreshLoop]).
  */
@@ -36,11 +41,18 @@ const val AUTO_REFRESH_INTERVAL_MILLIS: Long = 3L * 60 * 60 * 1000
 class DashboardState(
     private val scope: CoroutineScope,
     val counties: List<County> = Counties.all,
-    private val loader: suspend (County) -> LoadState = ::loadCounty,
+    loader: (suspend (County) -> LoadState)? = null,
     initialLanguage: Language = Language.ENGLISH,
     private val clock: () -> Long = { AppGraph.nowMillis() },
     private val autoRefreshIntervalMillis: Long = AUTO_REFRESH_INTERVAL_MILLIS,
+    batchLoader: (suspend (List<County>) -> Map<Int, LoadState>)? = null,
 ) {
+    // With neither loader given, the app's real ones are used (batch for refresh, single for retry).
+    // A custom single-county [loader] without a [batchLoader] keeps the per-county refresh (tests).
+    private val loader: suspend (County) -> LoadState = loader ?: { loadCounty(it) }
+    private val batchLoader: (suspend (List<County>) -> Map<Int, LoadState>)? =
+        batchLoader ?: if (loader == null) ::loadCounties else null
+
     val states: SnapshotStateMap<Int, LoadState> = mutableStateMapOf()
     var language by mutableStateOf(initialLanguage)
     var selectedCode by mutableStateOf<Int?>(null)
@@ -80,7 +92,8 @@ class DashboardState(
     private var generation = 0
 
     /**
-     * Reloads every county, at most 6 requests at a time to be polite to the free API.
+     * Reloads every county. With a batch loader (the default in the app) that is about 2 HTTP calls
+     * in total; otherwise one call per county, at most 6 at a time to be polite to the free API.
      * Non-blanking: rows keep their previous data and update in place as each county arrives.
      * Only counties with no state yet show "loading". A reload that falls back to the cache or
      * fails never replaces good data (see [mergeReload]).
@@ -93,19 +106,41 @@ class DashboardState(
         counties.forEach { if (states[it.code] == null) states[it.code] = LoadState.Loading }
         refreshJob = scope.launch {
             try {
-                val limit = Semaphore(6)
-                counties.map { county ->
-                    launch {
-                        limit.withPermit {
-                            val result = loader(county)
-                            states[county.code] = mergeReload(states[county.code], result, clock())
-                            refreshDone++
-                        }
-                    }
-                }.forEach { it.join() }
+                val batch = batchLoader
+                if (batch != null) refreshInBatch(batch) else refreshOneByOne()
             } finally {
                 if (gen == generation) refreshing = false
             }
+        }
+    }
+
+    private suspend fun refreshInBatch(batch: suspend (List<County>) -> Map<Int, LoadState>) {
+        val results = try {
+            batch(counties)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            emptyMap()
+        }
+        counties.forEach { county ->
+            val result = results[county.code] ?: LoadState.Failed("No result")
+            states[county.code] = mergeReload(states[county.code], result, clock())
+            refreshDone++
+        }
+    }
+
+    private suspend fun refreshOneByOne() {
+        coroutineScope {
+            val limit = Semaphore(6)
+            counties.map { county ->
+                launch {
+                    limit.withPermit {
+                        val result = loader(county)
+                        states[county.code] = mergeReload(states[county.code], result, clock())
+                        refreshDone++
+                    }
+                }
+            }.forEach { it.join() }
         }
     }
 

@@ -7,7 +7,7 @@ data class GeoPoint(val latitude: Double, val longitude: Double)
  *
  * [location] is the county headquarters and is used for rainfall forecasts.
  * [riverPoint] is set only for counties with a major flood-prone river; it is used
- * for river discharge forecasts. Hotspots are known flood/landslide areas and must
+ * for river discharge forecasts. [landslideProne] marks counties with documented landslide history. Hotspots are known flood/landslide areas and must
  * be checked against current county and KMSA advisories before release.
  */
 data class County(
@@ -18,4 +18,8 @@ data class County(
     val riverName: String? = null,
     val riverPoint: GeoPoint? = null,
     val hotspots: List<String> = emptyList(),
+    /** True when steep, landslide-prone terrain makes heavy rain especially dangerous (see Counties.kt for sources). */
+    val landslideProne: Boolean = false,
+    /** Specific landslide-prone areas, shown in advice. Only meaningful when [landslideProne]. */
+    val landslideAreas: List<String> = emptyList(),
 )

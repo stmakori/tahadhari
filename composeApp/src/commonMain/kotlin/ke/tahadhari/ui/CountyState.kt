@@ -3,6 +3,7 @@ package ke.tahadhari.ui
 import ke.tahadhari.AppGraph
 import ke.tahadhari.data.County
 import ke.tahadhari.data.ForecastRepository
+import ke.tahadhari.data.ForecastResult
 import ke.tahadhari.domain.CountyForecast
 import ke.tahadhari.domain.Dates
 import ke.tahadhari.domain.Freshness
@@ -43,7 +44,35 @@ suspend fun loadCounty(
     riskEngine: RiskEngine,
     nowMillis: Long,
 ): LoadState = try {
-    val result = repository.forecastFor(county)
+    toLoadState(Result.success(repository.forecastFor(county)), riskEngine, nowMillis)
+} catch (e: CancellationException) {
+    throw e
+} catch (e: Exception) {
+    toLoadState(Result.failure(e), riskEngine, nowMillis)
+}
+
+/** Loads many counties with batched requests (dashboard). Same per-county rules as [loadCounty]. */
+suspend fun loadCounties(counties: List<County>): Map<Int, LoadState> =
+    loadCounties(counties, AppGraph.repository, AppGraph.riskEngine, AppGraph.nowMillis())
+
+suspend fun loadCounties(
+    counties: List<County>,
+    repository: ForecastRepository,
+    riskEngine: RiskEngine,
+    nowMillis: Long,
+): Map<Int, LoadState> =
+    repository.forecastsFor(counties).mapValues { (_, result) -> toLoadState(result, riskEngine, nowMillis) }
+
+/** Turns a repository result into UI state; the risk level is recomputed from data, never cached. */
+fun toLoadState(result: Result<ForecastResult>, riskEngine: RiskEngine, nowMillis: Long): LoadState {
+    result.exceptionOrNull()?.let { e ->
+        if (e is CancellationException) throw e
+        return LoadState.Failed(e.message ?: e::class.simpleName ?: "error")
+    }
+    return toLoadState(result.getOrThrow(), riskEngine, nowMillis)
+}
+
+private fun toLoadState(result: ForecastResult, riskEngine: RiskEngine, nowMillis: Long): LoadState =
     if (result.fromCache && Freshness.isTooOldToShow(result.fetchedAtMillis, nowMillis)) {
         val date = Dates.isoDateFromEpochMillis(result.fetchedAtMillis)
         LoadState.Failed(
@@ -58,8 +87,3 @@ suspend fun loadCounty(
             fromCache = result.fromCache,
         )
     }
-} catch (e: CancellationException) {
-    throw e
-} catch (e: Exception) {
-    LoadState.Failed(e.message ?: e::class.simpleName ?: "error")
-}

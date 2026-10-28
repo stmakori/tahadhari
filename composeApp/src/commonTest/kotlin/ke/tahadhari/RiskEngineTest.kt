@@ -58,4 +58,72 @@ class RiskEngineTest {
     @Test fun riverOutlookIsNullWithoutForecastValues() {
         assertNull(RiverOutlook.fromSeries(null, listOf("2026-10-20"), listOf(5.0), "2026-10-27"))
     }
+
+    // ---- landslide signal ----
+
+    private val murangaProne = Counties.byCode(21)!!.copy(landslideProne = true)
+    private val flatCounty = Counties.byCode(21)!!.copy(landslideProne = false)
+
+    private fun forecastIn(county: ke.tahadhari.data.County, vararg mm: Double) = CountyForecast(
+        county = county,
+        days = mm.mapIndexed { i, v -> DailyRain("2026-10-${27 + i}", v, null) },
+        river = null,
+        fetchedAtDate = "2026-10-27",
+    )
+
+    @Test fun landslideProneCountyWith3DayRainAtHighThresholdIsHigh() {
+        // 3-day total 50 mm: only MODERATE from the wet-spell rule (>=40), but 50 on a slope is HIGH.
+        val a = engine.assess(forecastIn(murangaProne, 17.0, 17.0, 16.0, 0.0))
+        assertEquals(50.0, a.maxThreeDayTotalMm)
+        assertEquals(RiskLevel.HIGH, a.level)
+        val r = a.reasons.filterIsInstance<RiskReason.LandslideRisk>().single()
+        assertEquals(RiskLevel.HIGH, r.level)
+        assertEquals("2026-10-27", r.startDate)
+        assertEquals(50.0, r.totalMm)
+    }
+
+    @Test fun sameRainInNonProneCountyIsOnlyModerate() {
+        val a = engine.assess(forecastIn(flatCounty, 17.0, 17.0, 16.0, 0.0))
+        assertEquals(RiskLevel.MODERATE, a.level)
+        assertTrue(a.reasons.none { it is RiskReason.LandslideRisk })
+    }
+
+    @Test fun landslideBoundariesJustBelowAndAtThresholds() {
+        assertEquals(RiskLevel.MODERATE, engine.assess(forecastIn(murangaProne, 16.0, 16.0, 17.9)).level) // 49.9
+        assertTrue(engine.assess(forecastIn(murangaProne, 16.0, 16.0, 17.9)).reasons.none { it is RiskReason.LandslideRisk })
+        assertEquals(RiskLevel.HIGH, engine.assess(forecastIn(murangaProne, 30.0, 30.0, 39.9)).level)   // 99.9 -> wet spell is HIGH too
+        val severe = engine.assess(forecastIn(murangaProne, 33.0, 33.0, 34.0)) // exactly 100
+        assertEquals(RiskLevel.SEVERE, severe.level)
+        assertEquals(RiskLevel.SEVERE, severe.reasons.filterIsInstance<RiskReason.LandslideRisk>().single().level)
+    }
+
+    @Test fun landslideSevereBeatsWetSpellHigh() {
+        // 100 mm over 3 days is only HIGH by the generic wet-spell rule (<120) and no single day >= 50.
+        val flat = engine.assess(forecastIn(flatCounty, 33.0, 33.0, 34.0))
+        assertEquals(RiskLevel.HIGH, flat.level)
+        assertEquals(RiskLevel.SEVERE, engine.assess(forecastIn(murangaProne, 33.0, 33.0, 34.0)).level)
+    }
+
+    @Test fun landslideNeverLowersAnotherSignal() {
+        // A severe river signal stays SEVERE even when the landslide signal is only HIGH.
+        val river = RiverOutlook("Maragua", baselineDischarge = 10.0, peakDischarge = 35.0, peakDate = "2026-10-29")
+        val f = forecastIn(murangaProne, 17.0, 17.0, 16.0).copy(river = river)
+        val a = engine.assess(f)
+        assertEquals(RiskLevel.SEVERE, a.level)
+        assertTrue(a.reasons.any { it is RiskReason.LandslideRisk })
+        assertTrue(a.reasons.any { it is RiskReason.RiverRising })
+    }
+
+    @Test fun landslideThresholdsAreConfigurable() {
+        val strict = RiskEngine(RiskThresholds(landslideHighMm = 30.0, landslideSevereMm = 45.0))
+        assertEquals(RiskLevel.SEVERE, strict.assess(forecastIn(murangaProne, 15.0, 15.0, 15.0)).level)
+        assertEquals(50.0, RiskThresholds().landslideHighMm)
+        assertEquals(100.0, RiskThresholds().landslideSevereMm)
+    }
+
+    @Test fun landslideFieldsInCountyData() {
+        assertTrue(Counties.all.any { it.landslideProne })
+        assertTrue(Counties.all.filter { it.landslideAreas.isNotEmpty() }.all { it.landslideProne })
+        assertTrue(!Counties.byCode(47)!!.landslideProne) // Nairobi: default false
+    }
 }
