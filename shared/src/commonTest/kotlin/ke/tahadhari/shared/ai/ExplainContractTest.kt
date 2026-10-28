@@ -57,4 +57,15 @@ class ExplainContractTest {
         assertNull(ExplainContract.validateResponse(ExplainResponse("Hi", "short", listOf("a"))))
         assertNull(ExplainContract.validateResponse(ExplainResponse("Headline", "A long enough body text.", emptyList())))
     }
+
+    @Test fun landslideReasonIsAcceptedAndUnknownStillRejected() {
+        assertNull(ExplainContract.validateRequest(request.copy(reasons = listOf("WET_SPELL", "LANDSLIDE"))))
+        assertNotNull(ExplainContract.validateRequest(request.copy(reasons = listOf("EARTHQUAKE"))))
+    }
+
+    @Test fun promptShowsLandslideReasonAndSystemPromptExplainsIt() {
+        assertTrue(PromptBuilder.user(request.copy(reasons = listOf("LANDSLIDE"))).contains("Reasons: LANDSLIDE"))
+        assertTrue(PromptBuilder.system.contains("LANDSLIDE"))
+        assertTrue(PromptBuilder.system.contains("valley bottoms"))
+    }
 }

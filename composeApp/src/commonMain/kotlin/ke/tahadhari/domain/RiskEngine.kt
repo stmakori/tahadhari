@@ -6,6 +6,8 @@ sealed interface RiskReason {
     val level: RiskLevel
     data class HeavyDay(val date: String, val mm: Double, override val level: RiskLevel) : RiskReason
     data class WetSpell(val startDate: String, val totalMm: Double, override val level: RiskLevel) : RiskReason
+    /** Heavy 3-day rain in a landslide-prone county ([ke.tahadhari.data.County.landslideProne]). */
+    data class LandslideRisk(val startDate: String, val totalMm: Double, override val level: RiskLevel) : RiskReason
     data class RiverRising(val riverName: String?, val ratio: Double, override val level: RiskLevel) : RiskReason
 }
 
@@ -30,6 +32,9 @@ data class RiskThresholds(
     val threeDaySevereMm: Double = 120.0,
     val riverHighRatio: Double = 2.0,
     val riverSevereRatio: Double = 3.0,
+    /** Wettest 3-day total at which a landslide-prone county is at least High / Severe. */
+    val landslideHighMm: Double = 50.0,
+    val landslideSevereMm: Double = 100.0,
 )
 
 class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
@@ -52,6 +57,16 @@ class RiskEngine(private val t: RiskThresholds = RiskThresholds()) {
         bestStart?.let { start ->
             levelFor(bestTotal, t.threeDayModerateMm, t.threeDayHighMm, t.threeDaySevereMm)
                 ?.let { reasons += RiskReason.WetSpell(start, bestTotal, it) }
+        }
+
+        if (forecast.county.landslideProne) {
+            val level = when {
+                bestTotal >= t.landslideSevereMm -> RiskLevel.SEVERE
+                bestTotal >= t.landslideHighMm -> RiskLevel.HIGH
+                else -> null
+            }
+            val start = bestStart
+            if (level != null && start != null) reasons += RiskReason.LandslideRisk(start, bestTotal, level)
         }
 
         forecast.river?.let { river ->

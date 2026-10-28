@@ -1,6 +1,7 @@
 package ke.tahadhari.data
 
 import ke.tahadhari.data.remote.FloodDaily
+import ke.tahadhari.data.remote.MAX_POINTS_PER_CALL
 import ke.tahadhari.data.remote.ForecastApi
 import ke.tahadhari.data.remote.RainfallDaily
 import ke.tahadhari.domain.CountyForecast
@@ -67,23 +68,108 @@ class ForecastRepository(
             }
         }
         val rain = rainCall.await()
-        val now = nowMillis()
-        var flood = floodCall?.await()
+        assemble(county, rain, floodCall?.await(), expectsFlood = floodCall != null, now = nowMillis())
+    }
+
+    /**
+     * Builds what we save for one county from fresh rainfall and (maybe) fresh river data.
+     * If the county has a river but the river data is missing, reuse recent cached river data
+     * so a flaky flood API doesn't silently remove the river signal.
+     */
+    private suspend fun assemble(
+        county: County,
+        rain: RainfallDaily,
+        freshFlood: FloodDaily?,
+        expectsFlood: Boolean,
+        now: Long,
+    ): CachedForecast {
+        var flood = freshFlood
         var floodAt: Long? = if (flood != null) now else null
-        if (floodCall != null && flood == null) {
-            // River API failed but rainfall worked: reuse recent cached river data if we have it.
+        if (expectsFlood && flood == null) {
             cache.read(county.code)?.takeIf { cached ->
                 val at = cached.floodFetchedAtMillis
                 cached.flood != null && at != null && !Freshness.isTooOldToShow(at, now)
             }?.let { flood = it.flood; floodAt = it.floodFetchedAtMillis }
         }
-        CachedForecast(
+        return CachedForecast(
             countyCode = county.code,
             fetchedAtMillis = now,
             rainfall = rain,
             flood = flood,
             floodFetchedAtMillis = floodAt,
         )
+    }
+
+    /**
+     * Forecasts for many counties using batched API calls (one rainfall call and one river call
+     * for up to [MAX_POINTS_PER_CALL] points each) instead of one call per county.
+     *
+     * Per county the cache rules are the same as [forecastFor]: success is saved; if that county's
+     * data is missing, or its whole batch call failed, the saved forecast is served (marked
+     * [ForecastResult.fromCache], past days dropped); with no usable cache the county's entry is a failure.
+     * A failed river batch only costs the river signal (recent cached river data is reused).
+     * The result has one entry per county code in [counties].
+     */
+    suspend fun forecastsFor(counties: List<County>): Map<Int, Result<ForecastResult>> = coroutineScope {
+        val rainByCode = HashMap<Int, RainfallDaily>()
+        val rainErrors = HashMap<Int, Throwable>()
+        val floodByCode = HashMap<Int, FloodDaily>()
+
+        val rainJobs = counties.chunked(MAX_POINTS_PER_CALL).map { chunk ->
+            async {
+                try {
+                    val responses = api.dailyRainfallBatch(chunk.map { it.location })
+                    check(responses.size == chunk.size) { "Expected ${chunk.size} rainfall results but got ${responses.size}" }
+                    chunk.zip(responses).forEach { (county, response) ->
+                        val daily = response?.daily
+                        if (daily != null && daily.time.isNotEmpty()) rainByCode[county.code] = daily
+                        else rainErrors[county.code] = RuntimeException("No rainfall data for ${county.name}")
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    chunk.forEach { rainErrors[it.code] = e }
+                }
+            }
+        }
+        val riverCounties = counties.filter { it.riverPoint != null }
+        val floodJobs = riverCounties.chunked(MAX_POINTS_PER_CALL).map { chunk ->
+            async {
+                try {
+                    val responses = api.riverDischargeBatch(chunk.map { it.riverPoint!! })
+                    check(responses.size == chunk.size) { "Expected ${chunk.size} river results but got ${responses.size}" }
+                    chunk.zip(responses).forEach { (county, response) ->
+                        response?.daily?.let { floodByCode[county.code] = it }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // River data is optional; assemble() falls back to recent cached river data.
+                }
+            }
+        }
+        (rainJobs + floodJobs).forEach { it.await() }
+
+        val now = nowMillis()
+        counties.associate { county ->
+            val rain = rainByCode[county.code]
+            county.code to if (rain != null) {
+                try {
+                    val fetched = assemble(county, rain, floodByCode[county.code], county.riverPoint != null, now)
+                    cache.write(fetched)
+                    val forecast = buildForecast(county, fetched.rainfall, fetched.flood, today = null)
+                    Result.success(ForecastResult(forecast, fetched.fetchedAtMillis, fromCache = false))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    fromCache(county)?.let { Result.success(it) } ?: Result.failure(e)
+                }
+            } else {
+                val cached = fromCache(county)
+                if (cached != null) Result.success(cached)
+                else Result.failure(rainErrors[county.code] ?: RuntimeException("No data for ${county.name}"))
+            }
+        }
     }
 
     private suspend fun fromCache(county: County): ForecastResult? {

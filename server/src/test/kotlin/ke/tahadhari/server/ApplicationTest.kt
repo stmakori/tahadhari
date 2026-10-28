@@ -46,4 +46,15 @@ class ApplicationTest {
         val res = client.post("/v1/explain") { contentType(ContentType.Application.Json); setBody(requestJson) }
         assertEquals(HttpStatusCode.BadGateway, res.status)
     }
+
+    @Test fun acceptsLandslideReasonCode() = testApplication {
+        var prompt = ""
+        application { module(llm = { system, user -> prompt = system + user; goodReply }) }
+        val res = client.post("/v1/explain") {
+            contentType(ContentType.Application.Json)
+            setBody(requestJson.replace("\"HEAVY_DAY\"", "\"WET_SPELL\",\"LANDSLIDE\""))
+        }
+        assertEquals(HttpStatusCode.OK, res.status)
+        assertTrue(prompt.contains("Reasons: WET_SPELL, LANDSLIDE"))
+    }
 }

@@ -222,6 +222,7 @@ data class Strings(
     val briefingHighlightsTitle: String,
     val briefingNoHighlights: String,
     val briefingPrintHint: String,
+    val reasonLandslide: (mm: Int, startDay: String) -> String,
 ) {
     companion object {
         val english = Strings(
@@ -464,6 +465,7 @@ data class Strings(
             briefingHighlightsTitle = "High and Severe counties: what to do",
             briefingNoHighlights = "No county has a High or Severe level in the data that loaded.",
             briefingPrintHint = "To print or save as PDF, use your browser's Print command (Ctrl+P).",
+            reasonLandslide = { mm, d -> "$mm mm over 3 days from $d: landslide risk on steep slopes" },
         )
 
         val swahili = Strings(
@@ -720,6 +722,7 @@ data class Strings(
             briefingHighlightsTitle = "Kaunti za hatari Kubwa na Kubwa Sana: cha kufanya",
             briefingNoHighlights = "Hakuna kaunti yenye kiwango cha hatari Kubwa au Kubwa Sana katika data iliyopakiwa.",
             briefingPrintHint = "Ili kuchapisha au kuhifadhi kama PDF, tumia amri ya Print ya kivinjari chako (Ctrl+P).",
+            reasonLandslide = { mm, d -> "Milimita $mm kwa siku 3 kuanzia $d: hatari ya maporomoko ya ardhi kwenye miteremko mikali" },
         )
 
         fun of(language: Language) = if (language == Language.SWAHILI) swahili else english

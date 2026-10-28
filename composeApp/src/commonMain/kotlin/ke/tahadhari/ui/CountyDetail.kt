@@ -161,6 +161,7 @@ private fun reasonLines(a: RiskAssessment, language: Language, s: Strings): List
         when (r) {
             is RiskReason.HeavyDay -> AppIcons.Drop to s.reasonHeavyDay(r.mm.roundToInt(), Dates.dayName(r.date, language))
             is RiskReason.WetSpell -> AppIcons.Drop to s.reasonWetSpell(r.totalMm.roundToInt(), Dates.dayName(r.startDate, language))
+            is RiskReason.LandslideRisk -> AppIcons.Drop to s.reasonLandslide(r.totalMm.roundToInt(), Dates.dayName(r.startDate, language))
             is RiskReason.RiverRising -> AppIcons.Waves to s.reasonRiver(r.riverName ?: s.nearbyRiver, r.ratio.oneDecimal())
         }
     }

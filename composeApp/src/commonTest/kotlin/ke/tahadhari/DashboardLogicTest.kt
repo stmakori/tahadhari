@@ -20,7 +20,8 @@ class DashboardLogicTest {
     private val states: Map<Int, LoadState> = mapOf(
         1 to readyState(c(1), Rain.low, updatedAtMillis = 3_000),
         4 to readyState(c(4), Rain.severe, updatedAtMillis = 1_000),
-        21 to readyState(c(21), Rain.high, updatedAtMillis = 2_000),
+        // Murang'a is landslide-prone (Rain.high would be Severe there); this test wants a plain High.
+        21 to readyState(c(21).copy(landslideProne = false), Rain.high, updatedAtMillis = 2_000),
         42 to LoadState.Failed("offline"),
         47 to readyState(c(47), Rain.high.map { it * 1.05 }, updatedAtMillis = 5_000),
         9 to LoadState.Loading,

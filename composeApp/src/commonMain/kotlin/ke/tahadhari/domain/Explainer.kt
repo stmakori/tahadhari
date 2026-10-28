@@ -25,6 +25,9 @@ interface AlertExplainer {
  * TODO: have a native Swahili speaker review all Swahili text before submission.
  */
 class TemplateExplainer : AlertExplainer {
+    private companion object {
+        const val MAX_ACTIONS = 5
+    }
 
     override suspend fun explain(county: County, assessment: RiskAssessment, language: Language): Explanation =
         build(county, assessment, language)
@@ -72,8 +75,33 @@ class TemplateExplainer : AlertExplainer {
             if (sw) " Maeneo yaliyo hatarini zaidi: $list." else " Areas most at risk: $list."
         } else ""
 
-        return Explanation(headline, body + hotspots, actions(a.level, sw), ExplanationSource.TEMPLATE)
+        val landslide = a.reasons.any { it is RiskReason.LandslideRisk }
+        val acts = if (landslide) landslideActions(sw) + actions(a.level, sw) else actions(a.level, sw)
+        return Explanation(
+            headline,
+            body + landslideClause(county, landslide, sw) + hotspots,
+            acts.take(MAX_ACTIONS),
+            ExplanationSource.TEMPLATE,
+        )
     }
+
+    private fun landslideClause(county: County, landslide: Boolean, sw: Boolean): String {
+        if (!landslide) return ""
+        val areas = county.landslideAreas.joinToString(", ")
+        return if (sw) {
+            " Maporomoko ya ardhi yanawezekana kwenye miteremko mikali" + (if (areas.isNotEmpty()) ", hasa $areas" else "") + "."
+        } else {
+            " Landslides are possible on steep slopes" + (if (areas.isNotEmpty()) ", especially around $areas" else "") + "."
+        }
+    }
+
+    private fun landslideActions(sw: Boolean): List<String> = if (sw) listOf(
+        "Angalia nyufa ardhini au kwenye kuta, miti au nguzo zinazoinama, na chemchemi mpya au maji machafu. Hizi ni dalili za hatari",
+        "Ondoka kwenye miteremko mikali na kwenye mabonde yaliyo chini yake, hasa usiku. Usirudi hadi eneo likaguliwe",
+    ) else listOf(
+        "Watch for cracks in the ground or walls, tilting trees or poles, and new springs or muddy water. These are warning signs",
+        "Move away from steep slopes and from valley bottoms below them, especially at night. Don't return until the area has been checked",
+    )
 
     private fun riverClause(a: RiskAssessment, sw: Boolean): String {
         val river = a.river ?: return ""
