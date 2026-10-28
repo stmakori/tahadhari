@@ -63,7 +63,7 @@ fun RainChart(
     val grow = remember(days) { Animatable(0f) }
     LaunchedEffect(days) { grow.animateTo(1f, tween(700, easing = FastOutSlowInEasing)) }
 
-    val description = days.joinToString(". ") {
+    val description = strings.rainNext7 + ". " + days.joinToString(". ") {
         strings.chartDay(Dates.dayName(it.date, language), it.precipitationMm.roundToInt(), it.probabilityPercent)
     }
     val gutter = 40.dp // right-hand space for threshold labels

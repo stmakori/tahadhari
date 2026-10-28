@@ -45,12 +45,30 @@ internal fun LocationCard(strings: Strings, onPick: (County) -> Unit, modifier: 
     var ui by remember { mutableStateOf<LocationUi>(LocationUi.Idle) }
     val currentStrings by rememberUpdatedState(strings)
     val request = rememberLocationRequester { result -> ui = locationUiFor(result, currentStrings) } ?: return
+    LocationCardContent(
+        ui, strings,
+        onRequest = { ui = LocationUi.Locating; request() },
+        onConfirm = { county -> ui = LocationUi.Idle; onPick(county) },
+        onDismiss = { ui = LocationUi.Idle },
+        modifier = modifier,
+    )
+}
 
+/** Stateless card UI: takes what to show and callbacks, makes no platform calls (screenshot-testable). */
+@Composable
+internal fun LocationCardContent(
+    ui: LocationUi,
+    strings: Strings,
+    onRequest: () -> Unit,
+    onConfirm: (County) -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     AnimatedContent(ui, modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) { state ->
         when (state) {
             LocationUi.Idle, is LocationUi.Message -> Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                 FilledTonalButton(
-                    onClick = { ui = LocationUi.Locating; request() },
+                    onClick = onRequest,
                     modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.touch),
                 ) {
                     Icon(AppIcons.MyLocation, null, Modifier.size(18.dp))
@@ -78,11 +96,11 @@ internal fun LocationCard(strings: Strings, onPick: (County) -> Unit, modifier: 
                 Text(strings.confirmCountyNote, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
                     Button(
-                        onClick = { ui = LocationUi.Idle; onPick(state.county) },
+                        onClick = { onConfirm(state.county) },
                         modifier = Modifier.weight(1f).heightIn(min = Spacing.touch),
                     ) { Text(strings.confirmYes, textAlign = TextAlign.Center) }
                     OutlinedButton(
-                        onClick = { ui = LocationUi.Idle },
+                        onClick = onDismiss,
                         modifier = Modifier.weight(1f).heightIn(min = Spacing.touch),
                     ) { Text(strings.confirmNo, textAlign = TextAlign.Center) }
                 }

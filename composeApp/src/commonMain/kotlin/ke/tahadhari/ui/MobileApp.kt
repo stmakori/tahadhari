@@ -9,17 +9,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.backhandler.BackHandler
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ke.tahadhari.data.Counties
 import ke.tahadhari.data.County
 import ke.tahadhari.data.guides.SafetyGuides
 import ke.tahadhari.domain.Language
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import ke.tahadhari.ui.mobile.AboutPage
 import ke.tahadhari.ui.mobile.CheckInRow
 import ke.tahadhari.ui.mobile.CountyPickerScreen
 import ke.tahadhari.ui.mobile.EmergencyScreen
@@ -51,12 +56,14 @@ fun MobileApp(
     darkTheme: Boolean = isSystemInDarkTheme(),
     initialTab: MobileTab = MobileTab.ALERTS,
     initialGuideId: String? = null,
+    initialShowAbout: Boolean = false,
 ) {
     TahadhariTheme(darkTheme) {
         var language by rememberSaveable { mutableStateOf(initialLanguage) }
         var countyCode by rememberSaveable { mutableStateOf(initialCountyCode?.takeIf { Counties.byCode(it) != null }) }
         var tab by rememberSaveable { mutableStateOf(initialTab) }
         var guideId by rememberSaveable { mutableStateOf(initialGuideId?.takeIf { SafetyGuides.byId(it) != null }) }
+        var showAbout by rememberSaveable { mutableStateOf(initialShowAbout) }
         val guideTicks = remember { mutableStateMapOf<String, Boolean>() } // in memory only, by design
         val strings = Strings.of(language)
         val county = countyCode?.let { Counties.byCode(it) }
@@ -65,9 +72,10 @@ fun MobileApp(
         fun selectCounty(code: Int?) { countyCode = code; onCountyChange(code) }
         fun selectLanguage(l: Language) { language = l; onLanguageChange(l) }
 
-        // Back: guide -> guide list -> Alerts tab -> county picker -> exit.
-        BackHandler(enabled = tab != MobileTab.ALERTS || county != null) {
+        // Back: About -> (previous screen) | guide -> guide list -> Alerts tab -> county picker -> exit.
+        BackHandler(enabled = showAbout || tab != MobileTab.ALERTS || county != null) {
             when {
+                showAbout -> showAbout = false
                 tab == MobileTab.SAFETY && guide != null -> guideId = null
                 tab != MobileTab.ALERTS -> tab = MobileTab.ALERTS
                 else -> selectCounty(null)
@@ -80,13 +88,23 @@ fun MobileApp(
 
         val countyBack = tab == MobileTab.ALERTS && county != null
         val guideBack = tab == MobileTab.SAFETY && guide != null
-        val showBack = countyBack || guideBack
+        if (showAbout) {
+            AboutPage(language, ::selectLanguage) { showAbout = false }
+            return@TahadhariTheme
+        }
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Column {
-                            Text(strings.appName, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                strings.appName,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.semantics { heading() },
+                            )
                             Text(
                                 when {
                                     countyBack -> strings.countyLabel(county!!.name)
@@ -96,6 +114,7 @@ fun MobileApp(
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     },
@@ -104,7 +123,10 @@ fun MobileApp(
                         else if (guideBack) IconButton(onClick = { guideId = null }) { Icon(AppIcons.ArrowBack, strings.allGuides) }
                         else AppMark(Modifier.padding(horizontal = Spacing.md).size(36.dp))
                     },
-                    actions = { LanguageToggle(language, ::selectLanguage, Modifier.padding(end = Spacing.sm)) },
+                    actions = {
+                        IconButton(onClick = { showAbout = true }) { Icon(AppIcons.Info, strings.aboutOpen) }
+                        LanguageToggle(language, ::selectLanguage, Modifier.padding(end = Spacing.sm))
+                    },
                 )
             },
             bottomBar = {
@@ -139,6 +161,7 @@ private fun RowScope.TabItem(current: MobileTab, tab: MobileTab, icon: ImageVect
 }
 
 /** Loads one county (in a LaunchedEffect, never in composition) and shows its detail. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CountyScreen(
     county: County,
@@ -149,21 +172,37 @@ private fun CountyScreen(
     val strings = Strings.of(language)
     var state by remember(county.code) { mutableStateOf<LoadState>(LoadState.Loading) }
     var attempt by remember(county.code) { mutableIntStateOf(0) }
+    var refreshing by remember(county.code) { mutableStateOf(false) }
     LaunchedEffect(county.code, attempt) {
-        state = LoadState.Loading
+        // A refresh keeps the current forecast on screen (with the pull indicator) until the new one arrives.
+        if (state is LoadState.Ready) refreshing = true else state = LoadState.Loading
         state = loadCounty(county)
+        refreshing = false
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        CountyDetail(county, state, language, statusLine = statusLine ?: { DataStatusLine(it, Strings.of(language)) }) { attempt++ }
-        OutlinedButton(
-            onClick = onChangeCounty,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg).heightIn(min = Spacing.touch),
-        ) {
-            Icon(AppIcons.Location, null, Modifier.size(18.dp))
-            Spacer(Modifier.width(Spacing.sm))
-            Text(strings.changeCounty)
+    PullToRefreshBox(isRefreshing = refreshing, onRefresh = { if (!refreshing) attempt++ }, modifier = Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            CountyDetail(county, state, language, statusLine = statusLine ?: { DataStatusLine(it, Strings.of(language)) }) { attempt++ }
+            // Visible alternative to pulling, for desktop, switch and screen-reader users.
+            OutlinedButton(
+                onClick = { attempt++ },
+                enabled = !refreshing && state !is LoadState.Loading,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg).heightIn(min = Spacing.touch),
+            ) {
+                Icon(AppIcons.Refresh, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(Spacing.sm))
+                Text(strings.refresh)
+            }
+            Spacer(Modifier.height(Spacing.sm))
+            OutlinedButton(
+                onClick = onChangeCounty,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg).heightIn(min = Spacing.touch),
+            ) {
+                Icon(AppIcons.Location, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(Spacing.sm))
+                Text(strings.changeCounty)
+            }
+            CheckInRow(county, strings, Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.lg))
+            Spacer(Modifier.height(Spacing.sm))
         }
-        CheckInRow(county, strings, Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.lg))
-        Spacer(Modifier.height(Spacing.sm))
     }
 }
