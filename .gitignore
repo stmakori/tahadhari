@@ -10,3 +10,7 @@ captures/
 *.aab
 secrets.properties
 .claude/
+keystore.properties
+*.jks
+*.keystore
+__pycache__/
