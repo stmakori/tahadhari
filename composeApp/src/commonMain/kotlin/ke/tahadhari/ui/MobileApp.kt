@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -38,6 +39,9 @@ import ke.tahadhari.ui.mobile.ShareAlertButton
 import ke.tahadhari.ui.mobile.CountyPickerScreen
 import ke.tahadhari.ui.mobile.EmergencyScreen
 import ke.tahadhari.ui.mobile.SafetyScreen
+import ke.tahadhari.ui.mobile.WatchSection
+import ke.tahadhari.ui.mobile.WatchStates
+import ke.tahadhari.data.WatchList
 
 /** Bottom navigation tabs of the phone app. */
 enum class MobileTab { ALERTS, SAFETY, EMERGENCY }
@@ -72,6 +76,8 @@ fun MobileApp(
     initialTab: MobileTab = MobileTab.ALERTS,
     initialGuideId: String? = null,
     initialShowAbout: Boolean = false,
+    initialWatchCodes: List<Int> = emptyList(),
+    onWatchChange: (List<Int>) -> Unit = {},
 ) {
     TahadhariTheme(darkTheme) {
         var language by rememberSaveable { mutableStateOf(initialLanguage) }
@@ -86,13 +92,30 @@ fun MobileApp(
         val county = countyCode?.let { Counties.byCode(it) }
         val guide = guideId?.let { SafetyGuides.byId(it) }
 
-        fun selectCounty(code: Int?) { countyCode = code; onCountyChange(code) }
+        // Counties I watch: saved as text so it survives rotation; always re-sanitized (known, unique, max 3, not own).
+        var watchText by rememberSaveable { mutableStateOf(WatchList.encode(WatchList.sanitize(initialWatchCodes, initialCountyCode))) }
+        val watchCodes = WatchList.parse(watchText, countyCode)
+        var addingWatch by rememberSaveable { mutableStateOf(false) }
+        var viewingCode by rememberSaveable { mutableStateOf<Int?>(null) }
+        val watchHolder = remember { WatchStates() }
+        val homeScroll = rememberScrollState()
+        val viewing = viewingCode?.takeIf { it in watchCodes }?.let { Counties.byCode(it) }
+        fun setWatch(list: List<Int>) { watchText = WatchList.encode(list); onWatchChange(list) }
+
+        fun selectCounty(code: Int?) {
+            countyCode = code; onCountyChange(code)
+            addingWatch = false; viewingCode = null
+            if (code != null && code in watchCodes) setWatch(WatchList.remove(watchCodes, code))
+        }
         fun selectLanguage(l: Language) { language = l; onLanguageChange(l) }
 
         // Back: About -> (previous screen) | guide -> guide list -> Alerts tab -> county picker -> exit.
+        // A watched county's detail and the "add a county" picker go back to the Alerts home first.
         BackHandler(enabled = showAbout || tab != MobileTab.ALERTS || county != null) {
             when {
                 showAbout -> showAbout = false
+                tab == MobileTab.ALERTS && addingWatch -> addingWatch = false
+                tab == MobileTab.ALERTS && viewing != null -> viewingCode = null
                 tab == MobileTab.SAFETY && guide != null -> guideId = null
                 tab != MobileTab.ALERTS -> tab = MobileTab.ALERTS
                 else -> selectCounty(null)
@@ -124,6 +147,8 @@ fun MobileApp(
                             )
                             Text(
                                 when {
+                                    countyBack && addingWatch -> strings.watch.addTitle
+                                    countyBack && viewing != null -> strings.countyLabel(viewing.name)
                                     countyBack -> strings.countyLabel(county!!.name)
                                     guideBack -> guide!!.content(language).title
                                     else -> strings.tagline
@@ -136,7 +161,9 @@ fun MobileApp(
                         }
                     },
                     navigationIcon = {
-                        if (countyBack) IconButton(onClick = { selectCounty(null) }) { Icon(AppIcons.ArrowBack, strings.allCounties) }
+                        if (countyBack && addingWatch) IconButton(onClick = { addingWatch = false }) { Icon(AppIcons.ArrowBack, strings.watch.cancelAdd) }
+                        else if (countyBack && viewing != null) IconButton(onClick = { viewingCode = null }) { Icon(AppIcons.ArrowBack, strings.watch.backToMine) }
+                        else if (countyBack) IconButton(onClick = { selectCounty(null) }) { Icon(AppIcons.ArrowBack, strings.allCounties) }
                         else if (guideBack) IconButton(onClick = { guideId = null }) { Icon(AppIcons.ArrowBack, strings.allGuides) }
                         else AppMark(Modifier.padding(horizontal = Spacing.md).size(36.dp))
                     },
@@ -160,9 +187,33 @@ fun MobileApp(
                     if (crashReport != null) {
                         CrashReportCard(crashReport, language, onCrashReportDelete, Modifier.padding(Spacing.lg))
                     }
-                    AnimatedContent(county, Modifier.weight(1f), transitionSpec = { fadeIn() togetherWith fadeOut() }) { c ->
+                    if (county != null && addingWatch) {
+                        CountyPickerScreen(
+                            strings, modifier = Modifier.weight(1f),
+                            onPick = { setWatch(WatchList.add(watchCodes, it.code, countyCode)); addingWatch = false },
+                            showWelcome = false,
+                            excluded = watchCodes.toSet() + county.code,
+                            header = { Text(strings.watch.addHint, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(Spacing.lg)) },
+                        )
+                    } else if (county != null && viewing != null) {
+                        // A watched county's normal detail; Back returns to the Alerts home (and its watch list).
+                        Box(Modifier.weight(1f)) { CountyScreen(viewing, language, statusLine, riskAlerts, ::setRiskAlerts, onChangeCounty = null) }
+                    } else AnimatedContent(county, Modifier.weight(1f), transitionSpec = { fadeIn() togetherWith fadeOut() }) { c ->
                         if (c == null) CountyPickerScreen(strings, onPick = { selectCounty(it.code) })
-                        else CountyScreen(c, language, statusLine, riskAlerts, ::setRiskAlerts, onChangeCounty = { selectCounty(null) })
+                        else CountyScreen(
+                            c, language, statusLine, riskAlerts, ::setRiskAlerts, onChangeCounty = { selectCounty(null) },
+                            scroll = homeScroll,
+                            watchSection = { refreshKey ->
+                                WatchSection(
+                                    watched = watchCodes.mapNotNull { Counties.byCode(it) },
+                                    holder = watchHolder, refreshKey = refreshKey, language = language, riskAlertsOn = riskAlerts,
+                                    onOpen = { viewingCode = it.code },
+                                    onAdd = { addingWatch = true },
+                                    onRemove = { setWatch(WatchList.remove(watchCodes, it.code)) },
+                                    modifier = Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.lg),
+                                )
+                            },
+                        )
                     }
                 }
                 MobileTab.SAFETY -> SafetyScreen(strings, language, guide?.id, { guideId = it }, guideTicks, inner)
@@ -192,7 +243,11 @@ private fun CountyScreen(
     statusLine: (@Composable (LoadState.Ready) -> Unit)?,
     riskAlerts: Boolean,
     onRiskAlertsChange: (Boolean) -> Unit,
-    onChangeCounty: () -> Unit,
+    /** Null when showing a watched (someone else's) county: then "change county", alert settings and "I'm safe" are hidden. */
+    onChangeCounty: (() -> Unit)?,
+    scroll: ScrollState = rememberScrollState(),
+    /** Slot under the detail; receives the refresh counter so it can refresh together with the main county. */
+    watchSection: (@Composable (refreshKey: Int) -> Unit)? = null,
 ) {
     val strings = Strings.of(language)
     // Optional: the user's own point (rounded to ~1 km) instead of the county HQ. Kept in memory only.
@@ -209,7 +264,7 @@ private fun CountyScreen(
         refreshing = false
     }
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = { if (!refreshing) attempt++ }, modifier = Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxSize().verticalScroll(scroll)) {
             PointForecastCard(county, point, language, { point = it }, Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.lg))
             CountyDetail(shown, state, language, statusLine = statusLine ?: { DataStatusLine(it, Strings.of(language)) }) { attempt++ }
             // Sharing is offered only with a forecast on screen, never after a failure.
@@ -227,17 +282,20 @@ private fun CountyScreen(
                 Spacer(Modifier.width(Spacing.sm))
                 Text(strings.refresh)
             }
-            Spacer(Modifier.height(Spacing.sm))
-            OutlinedButton(
-                onClick = onChangeCounty,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg).heightIn(min = Spacing.touch),
-            ) {
-                Icon(AppIcons.Location, null, Modifier.size(18.dp))
-                Spacer(Modifier.width(Spacing.sm))
-                Text(strings.changeCounty)
+            watchSection?.invoke(attempt)
+            if (onChangeCounty != null) {
+                Spacer(Modifier.height(Spacing.sm))
+                OutlinedButton(
+                    onClick = onChangeCounty,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.lg).heightIn(min = Spacing.touch),
+                ) {
+                    Icon(AppIcons.Location, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(Spacing.sm))
+                    Text(strings.changeCounty)
+                }
+                RiskAlertsRow(riskAlerts, language, onRiskAlertsChange, Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.sm))
+                CheckInRow(county, strings, Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.lg))
             }
-            RiskAlertsRow(riskAlerts, language, onRiskAlertsChange, Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.sm))
-            CheckInRow(county, strings, Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.lg))
             Spacer(Modifier.height(Spacing.sm))
         }
     }
