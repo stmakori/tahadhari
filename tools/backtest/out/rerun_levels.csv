@@ -1,0 +1,10 @@
+variant,source,moderate_pct,high_pct,severe_pct,high_plus_days,n
+before,ecmwf_ifs025,25.1,4.01,2.18,147,3666
+before,gfs_seamless,28.94,8.43,4.01,309,3666
+before,era5,25.53,4.83,2.37,177,3666
+fixed,ecmwf_ifs025,26.19,4.96,2.4,182,3666
+fixed,gfs_seamless,30.06,9.44,4.26,346,3666
+fixed,era5,26.6,5.78,2.59,212,3666
+engine,ecmwf_ifs025,26.19,7.53,2.4,276,3666
+engine,gfs_seamless,30.06,11.78,4.42,432,3666
+engine,era5,26.6,7.31,2.59,268,3666

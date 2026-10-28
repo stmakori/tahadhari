@@ -3,7 +3,8 @@
 Raw API responses are cached under build/backtest-cache/ (git-ignored). A compact daily
 summary is written to tools/backtest/data/ (committed) and read by the Kotlin backtest.
 
-  python -I tools/backtest/fetch.py
+  python -I tools/backtest/fetch.py               # everything (about 50 requests)
+  python -I tools/backtest/fetch.py --river-only  # only the GloFAS river series, re-read from Counties.kt (about 6 requests)
 
 Sources (all Open-Meteo, CC BY 4.0):
   * previous-runs-api  : hourly precipitation as forecast 0..6 days earlier (explicit models: ECMWF IFS 0.25 and GFS)
@@ -75,8 +76,25 @@ def daily_from_hourly(times, values):
     return {d: (None if any(x is None for x in vs) or len(vs) < 24 else round(sum(vs), 2)) for d, vs in out.items()}
 
 
+def fetch_river(rivers):
+    flood = {}
+    for rv in rivers:
+        u = ("https://flood-api.open-meteo.com/v1/flood?latitude=%s&longitude=%s&daily=river_discharge&start_date=%s&end_date=%s"
+             % (rv["lat"], rv["lon"], RIVER_START, RIVER_END))
+        # the cache key includes the coordinates so a moved river point is never served a stale cell
+        r = get(u, f"flood_{rv['id']}_{rv['lat']}_{rv['lon']}")
+        flood[rv["id"]] = {"river": rv["river"], "lat": rv["lat"], "lon": rv["lon"], "grid_lat": r["latitude"], "grid_lon": r["longitude"],
+                           "daily": dict(zip(r["daily"]["time"], r["daily"]["river_discharge"]))}
+    json.dump({"note": "GloFAS river discharge m3/s (historical)", "flood": flood}, open(os.path.join(DATA, "flood.json"), "w"), separators=(",", ":"))
+    return flood
+
+
 def main():
     locs, rivers = load_locations()
+    if "--river-only" in sys.argv:
+        fetch_river(rivers)
+        print("river series written; network calls this run:", calls)
+        return
     hourly_vars = ["precipitation"] + [f"precipitation_previous_day{k}" for k in LEADS if k > 0]
     forecast, era5 = {m: {} for m in MODELS}, {}
     for i in range(0, len(locs), BATCH):
@@ -98,19 +116,12 @@ def main():
             era5[loc["id"]] = dict(zip(r["daily"]["time"], r["daily"]["precipitation_sum"]))
         print("batch", i, "calls so far", calls)
 
-    flood = {}
-    for rv in rivers:
-        u = ("https://flood-api.open-meteo.com/v1/flood?latitude=%s&longitude=%s&daily=river_discharge&start_date=%s&end_date=%s"
-             % (rv["lat"], rv["lon"], RIVER_START, RIVER_END))
-        r = get(u, f"flood_{rv['id']}")
-        flood[rv["id"]] = {"river": rv["river"], "grid_lat": r["latitude"], "grid_lon": r["longitude"],
-                           "daily": dict(zip(r["daily"]["time"], r["daily"]["river_discharge"]))}
+    fetch_river(rivers)
 
     for model in MODELS:
         json.dump({"note": "Open-Meteo previous-runs, model %s: daily mm by lead day; lead k = forecast issued ~k days earlier" % model,
                    "locations": locs, "forecast": forecast[model]}, open(os.path.join(DATA, "forecast_%s.json" % model), "w"), separators=(",", ":"))
     json.dump({"note": "ERA5 daily precipitation mm", "era5": era5}, open(os.path.join(DATA, "era5.json"), "w"), separators=(",", ":"))
-    json.dump({"note": "GloFAS river discharge m3/s (historical)", "flood": flood}, open(os.path.join(DATA, "flood.json"), "w"), separators=(",", ":"))
     print("done; network calls this run:", calls)
 
 

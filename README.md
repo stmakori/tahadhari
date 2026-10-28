@@ -195,14 +195,19 @@ reported landslide or a susceptibility study backs it; sources are in `Counties.
 mid-May) through the real `RiskEngine`, using archived ECMWF and GFS forecasts and ERA5 observed
 rainfall. It reports misses and false alarms as plainly as hits:
 
-- **Rainfall alone is a weak detector at county scale.** With the shipped thresholds the ECMWF
-  forecast reached High in 0 of 7 documented events, and even perfectly observed rain reached
-  High in 0 of 7. The rain at a county's grid point was far below what fell at the flood sites.
-- **The river signal was the most promising**, but the Tana River and Garissa points were on dry
-  grid cells. They have been moved to cells that carry the river (≈ 716 m³/s mean), and a 5 m³/s
-  floor was added. On the right cells, the hindcast ratio was 4–8× in the days before the Garissa
-  floods.
-- **Lowering the thresholds roughly doubled false alarms** for little gain, so they were not changed.
+- **Rainfall alone is a weak detector at county scale.** With the shipped thresholds, even perfectly
+  observed rain never reached High for the five rain-driven events, and the ECMWF forecast reached
+  at most Moderate for any of them. The rain at a county's grid point was far below what fell at the flood sites.
+- **The river signal is the only thing that caught the Tana River and Garissa floods**, after the
+  river points were moved from dry grid cells to cells that carry the river (about 600 m³/s mean) and a
+  5 m³/s floor was added. Re-run: High or higher in 2 of 7 events for ECMWF and perfect rain, 4 of 7 for
+  GFS, against about 1.1 to 1.7 expected by chance. But that signal is on about a third of all days in
+  the season at those points, so it is a hindcast with seven events, not proof of skill.
+- **High or Severe covers 7.5 % of county-days (ECMWF)**, up from 4.0 % before the river fix and the
+  landslide signal. Almost all of those fall outside the documented events (an upper bound on false alarms).
+- **Lowering the thresholds roughly doubled false alarms** for little gain, so they were not changed. A proposed
+  "saturated ground" (soil moisture) rule caught more events only by turning Moderate into High on
+  about a fifth of all days, so it is evaluated in the report and left off.
 
 That is why every screen says Tahadhari is guidance, not an official warning. Re-run it with
 `TAHADHARI_BACKTEST=1 ./gradlew :composeApp:desktopTest --tests "ke.tahadhari.BacktestRunnerTest"`.
