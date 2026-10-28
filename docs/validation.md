@@ -12,6 +12,14 @@ the wrong map cells for the two Tana River counties. Details, caveats and tuning
 Nothing here changes the app. `RiskEngine` thresholds were **not** modified; the tuning ideas at the
 end are suggestions only.
 
+> **Applied after this back-test (recommendation 1).** The Tana River, Garissa, Siaya and Kisumu
+> river points were moved to GloFAS cells that carry the river. Mean discharge for March–May 2024:
+> Tana −2.325, 40.175 ≈ 716 m³/s, where the old cell had about 0.1; Nzoia 0.125, 34.025 ≈ 378, where
+> Siaya's old cell had 5; Nyando −0.175, 34.875 ≈ 111, where the old cell had 2. `RiskEngine` now
+> ignores the river signal when the 30-day baseline is below 5 m³/s (`riverMinBaselineM3s`). That
+> also turns off Narok's Enkare Narok point, whose recent mean is about 2 m³/s. The results below
+> were computed **before** this fix and have not been re-run.
+
 ## 1. What was tested
 
 The back-test runs the app's real `RiskEngine` (and the real `RiverOutlook.fromSeries` and
