@@ -29,6 +29,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      - name: Set AI server URL in index.html (blank keeps offline text)
+        env:
+          PROXY_URL: ${{ vars.TAHADHARI_PROXY_URL }}
+        run: |
+          # Escape sed specials in the value (\ & |) and drop anything that could break the attribute.
+          safe=$(printf '%s' "$PROXY_URL" | tr -d '\r\n"<>' | sed -e 's/[\\&|]/\\&/g')
+          sed -i "s|<meta name=\"tahadhari-proxy-url\" content=\"\">|<meta name=\"tahadhari-proxy-url\" content=\"${safe}\">|" composeApp/src/wasmJsMain/resources/index.html
+          grep 'tahadhari-proxy-url' composeApp/src/wasmJsMain/resources/index.html
+
       - name: Build web distribution
         run: ./gradlew :composeApp:wasmJsBrowserDistribution --stacktrace
 

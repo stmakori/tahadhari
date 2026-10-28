@@ -153,6 +153,7 @@ data class Strings(
     val widgetSavedForecast: String,
     /** [ratio] is the forecast river peak divided by its recent level, e.g. "2.4". */
     val widgetRiverRising: (ratio: String) -> String,
+    val widgetLandslide: (mm: Int) -> String,
     val widgetSavedOn: (isoDate: String) -> String,
     val widgetNoDataBody: String,
     // --- About page, first-launch intro, refresh ---
@@ -435,6 +436,7 @@ data class Strings(
             widgetTapToRetry = "Tap to retry",
             widgetSavedForecast = "Saved forecast",
             widgetRiverRising = { x -> "River rising: $x× recent level" },
+            widgetLandslide = { mm -> "Landslide risk: $mm mm in 3 days" },
             widgetSavedOn = { "Saved forecast from ${Dates.shortDate(it, Language.ENGLISH)}" },
             widgetNoDataBody = "Couldn't load the forecast",
             aboutOpen = "About Tahadhari",
@@ -521,9 +523,9 @@ data class Strings(
             shareAlert = "Share alert",
             shareMsgRainDay = { mm, d -> "Up to $mm mm of rain on $d" },
             shareMsgRainSpell = { mm, d -> "About $mm mm of rain over 3 days from $d" },
-            shareMsgRiver = { r, x -> "$r rising to $x×" },
+            shareMsgRiver = { r, x -> "$r rising to ${x}x" },
             shareMsgEmergency = "Emergency: 999 / 112, Red Cross 1199",
-            shareMsgDisclaimer = "Not an official warning — follow KMSA and county advice.",
+            shareMsgDisclaimer = "Not an official warning - follow KMSA and county advice.",
             shareMsgVia = "via Tahadhari",
             shareMsgSaved = { "(saved forecast from ${Dates.shortDate(it, Language.ENGLISH)})" },
             riskAlertsToggle = "Notify me if risk rises to High or Severe",
@@ -736,6 +738,7 @@ data class Strings(
             widgetTapToRetry = "Gusa ujaribu tena",
             widgetSavedForecast = "Utabiri uliohifadhiwa",
             widgetRiverRising = { x -> "Mto unapanda: mara $x ya kiwango cha hivi karibuni" },
+            widgetLandslide = { mm -> "Hatari ya maporomoko: mm $mm kwa siku 3" }, // TODO(review)
             widgetSavedOn = { "Utabiri uliohifadhiwa wa ${Dates.shortDate(it, Language.SWAHILI)}" },
             widgetNoDataBody = "Imeshindwa kupakia utabiri",
             // TODO(review): About and intro Swahili below needs a fluent speaker's check.
@@ -825,7 +828,7 @@ data class Strings(
             shareMsgRainSpell = { mm, d -> "Mvua ya takriban milimita $mm kwa siku 3 kuanzia $d" },
             shareMsgRiver = { r, x -> "$r unapanda hadi mara $x" },
             shareMsgEmergency = "Dharura: 999 / 112, Msalaba Mwekundu 1199",
-            shareMsgDisclaimer = "Si tahadhari rasmi — fuata ushauri wa KMSA na kaunti yako.",
+            shareMsgDisclaimer = "Si tahadhari rasmi - fuata ushauri wa KMSA na kaunti yako.",
             shareMsgVia = "kupitia Tahadhari",
             shareMsgSaved = { "(utabiri uliohifadhiwa wa ${Dates.shortDate(it, Language.SWAHILI)})" },
             riskAlertsToggle = "Nijulishe hatari ikipanda hadi Kubwa au Kubwa Sana",

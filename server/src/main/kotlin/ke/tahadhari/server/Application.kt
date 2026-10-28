@@ -1,6 +1,9 @@
 package ke.tahadhari.server
 
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -39,12 +42,26 @@ fun main() {
     val llm = AnthropicCompleter(config.apiKey, config.model)
     log.info("Tahadhari AI server on port ${config.port}, model ${config.model}")
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
-        module(llm, requestsPerHour = config.requestsPerHour)
+        module(llm, requestsPerHour = config.requestsPerHour, allowedOrigins = config.allowedOrigins)
     }.start(wait = true)
 }
 
-fun Application.module(llm: LlmCompleter, requestsPerHour: Int = 60) {
+fun Application.module(
+    llm: LlmCompleter,
+    requestsPerHour: Int = 60,
+    allowedOrigins: List<String> = DEFAULT_ALLOWED_ORIGINS,
+) {
     val cache = ExplanationCache()
+
+    // Browser (web build) access: only the listed origins, POST + Content-Type, no credentials.
+    install(CORS) {
+        allowedOrigins.forEach { origin ->
+            allowHost(origin.substringAfter("://"), schemes = listOf(origin.substringBefore("://")))
+        }
+        allowMethod(HttpMethod.Post)
+        allowHeader(HttpHeaders.ContentType)
+        allowCredentials = false
+    }
 
     install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
     install(StatusPages) {

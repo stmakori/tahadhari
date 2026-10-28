@@ -14,6 +14,7 @@ import kotlin.math.roundToInt
 sealed interface WidgetReason {
     data class WettestDay(val mm: Int) : WidgetReason
     data class WetSpell(val mm: Int) : WidgetReason
+    data class Landslide(val mm: Int) : WidgetReason
     data class RiverRising(val ratio: String) : WidgetReason
     /** No signal reached Moderate. */
     data object Quiet : WidgetReason
@@ -62,7 +63,7 @@ private fun reasonOf(state: LoadState.Ready): WidgetReason =
     when (val top = state.assessment.reasons.firstOrNull()) {
         is RiskReason.HeavyDay -> WidgetReason.WettestDay(top.mm.roundToInt())
         is RiskReason.WetSpell -> WidgetReason.WetSpell(top.totalMm.roundToInt())
-        is RiskReason.LandslideRisk -> WidgetReason.WetSpell(top.totalMm.roundToInt())
+        is RiskReason.LandslideRisk -> WidgetReason.Landslide(top.totalMm.roundToInt())
         is RiskReason.RiverRising -> WidgetReason.RiverRising(oneDecimal(top.ratio))
         null -> state.assessment.wettestDay?.let { WidgetReason.WettestDay(it.precipitationMm.roundToInt()) }
             ?: WidgetReason.Quiet
@@ -108,6 +109,7 @@ fun WidgetUiState.toContent(strings: Strings, nowMillis: Long): WidgetContent = 
         reason = when (val r = reason) {
             is WidgetReason.WettestDay -> strings.wettestShort(r.mm)
             is WidgetReason.WetSpell -> strings.threeDayShort(r.mm)
+            is WidgetReason.Landslide -> strings.widgetLandslide(r.mm)
             is WidgetReason.RiverRising -> strings.widgetRiverRising(r.ratio)
             WidgetReason.Quiet -> null
         },

@@ -81,6 +81,22 @@ class WidgetModelTest {
         assertEquals(Strings.swahili.risk(RiskLevel.SEVERE), c.levelLabel)
     }
 
+    @Test fun landslideHasItsOwnReasonAndText() {
+        val prone = Counties.byCode(21)!!.copy(landslideProne = true)
+        val forecast = ke.tahadhari.domain.CountyForecast(
+            county = prone,
+            days = listOf(17.0, 17.0, 16.0, 0.0).mapIndexed { i, v -> ke.tahadhari.domain.DailyRain("2026-10-${27 + i}", v, null) },
+            river = null,
+            fetchedAtDate = "2026-10-27",
+        )
+        val state = LoadState.Ready(forecast, ke.tahadhari.domain.RiskEngine().assess(forecast), now, false)
+        val ui = widgetUiState(UserPreferences(countyCode = 21, language = Language.ENGLISH), state)
+        assertIs<WidgetUiState.Ready>(ui)
+        assertEquals(WidgetReason.Landslide(50), ui.reason)
+        assertEquals("Landslide risk: 50 mm in 3 days", ui.toContent(Strings.english, now).reason)
+        assertEquals("Hatari ya maporomoko: mm 50 kwa siku 3", ui.toContent(Strings.swahili, now).reason)
+    }
+
     @Test fun unknownCountyCodeIsNoCounty() {
         assertEquals(WidgetUiState.NoCounty, widgetUiState(UserPreferences(countyCode = 999), null))
     }

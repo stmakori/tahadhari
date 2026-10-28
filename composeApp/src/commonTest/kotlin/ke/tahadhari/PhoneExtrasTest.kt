@@ -32,6 +32,42 @@ private fun ready(countyCode: Int, peakMm: Double, riverRatio: Double?, fromCach
 class ShareAlertMessageTest {
     private val county = Counties.byCode(4)!!
 
+    /** GSM 03.38 basic set. Extension-table characters (^ { } [ ] ~ | and so on) cost two septets, so they are excluded. */
+    private val gsmBasic: Set<Char> = buildSet {
+        addAll("@£$¥èéùìòÇ\nØø\rÅå".toList())
+        addAll("Δ_ΦΓΛΩΠΨΣΘΞÆæßÉ".toList())
+        addAll(" !\"#¤%&'()*+,-./0123456789:;<=>?¡".toList())
+        addAll(('A'..'Z').toList())
+        addAll("ÄÖÑÜ§¿".toList())
+        addAll(('a'..'z').toList())
+        addAll("äöñüà".toList())
+    }
+
+    @Test fun shareTextIsGsm7AndShortForAllLevelsAndSignals() {
+        val prone = Counties.byCode(21)!!.copy(landslideProne = true)
+        val landslide = CountyForecast(
+            prone,
+            listOf(17.0, 17.0, 16.0, 0.0).mapIndexed { i, v -> DailyRain("2026-11-0${2 + i}", v, null) },
+            null, "2026-11-02",
+        )
+        val cases = listOf(
+            county to ready(county.code, 2.0, null),
+            county to ready(county.code, 25.0, null),
+            county to ready(county.code, 60.0, null),
+            county to ready(county.code, 99.0, null),
+            county to ready(county.code, 99.0, 3.4),
+            county to ready(county.code, 20.0, 2.5),
+            county to ready(county.code, 99.0, 3.4, fromCache = true),
+            prone to LoadState.Ready(landslide, RiskEngine().assess(landslide), NOW, false),
+        )
+        for ((c, state) in cases) for (lang in Language.entries) {
+            val text = shareAlertMessage(c, state, lang)
+            val bad = text.filter { it !in gsmBasic }.toSet()
+            assertTrue(bad.isEmpty(), "$lang non-GSM chars ${bad.map { "U+" + it.code.toString(16) }}:\n$text")
+            assertTrue(text.length <= SHARE_ALERT_MAX_CHARS, "$lang ${text.length} chars:\n$text")
+        }
+    }
+
     @Test fun worstCaseFitsInThreeSmsBothLanguages() {
         for (lang in Language.entries) {
             val state = ready(county.code, 99.0, 3.4, fromCache = true) // Severe, river, saved forecast: longest case
@@ -61,7 +97,7 @@ class ShareAlertMessageTest {
 
     @Test fun riverReasonIsUsedWhenItIsTheStrongestSignal() {
         val text = shareAlertMessage(county, ready(county.code, 25.0, 3.4), Language.ENGLISH)
-        assertTrue("Tana River rising to 3.4×" in text, text)
+        assertTrue("Tana River rising to 3.4x" in text, text)
     }
 
     @Test fun noRiverCase() {
