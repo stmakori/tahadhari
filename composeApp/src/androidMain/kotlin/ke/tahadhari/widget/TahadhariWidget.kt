@@ -167,12 +167,13 @@ class TahadhariWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        WidgetRefresh.schedulePeriodic(context)
+        WidgetRefresh.syncSchedule(context, widgetPresent = true)
         WidgetRefresh.refreshNow(context)
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        WidgetRefresh.cancelAll(context)
+        // Keep the background refresh if risk notifications still need it.
+        WidgetRefresh.syncSchedule(context, widgetPresent = false)
     }
 }

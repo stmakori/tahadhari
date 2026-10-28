@@ -26,6 +26,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import ke.tahadhari.ui.mobile.AboutPage
 import ke.tahadhari.ui.mobile.CheckInRow
+import ke.tahadhari.ui.mobile.CrashReportCard
+import ke.tahadhari.ui.mobile.RiskAlertsRow
+import ke.tahadhari.ui.mobile.ShareAlertButton
 import ke.tahadhari.ui.mobile.CountyPickerScreen
 import ke.tahadhari.ui.mobile.EmergencyScreen
 import ke.tahadhari.ui.mobile.SafetyScreen
@@ -43,6 +46,8 @@ enum class MobileTab { ALERTS, SAFETY, EMERGENCY }
  * county detail to the picker, then exits.
  *
  * @param darkTheme defaults to the system setting; set it for previews and screenshots.
+ * @param riskAlertsEnabled saved state of the opt-in "notify me if risk rises" switch; [onRiskAlertsChange] saves it.
+ * @param crashReport text of a crash saved by the last run, or null; [onCrashReportDelete] deletes it.
  * @param statusLine optional line under the hero card (e.g. "Updated …" / "Showing saved data").
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
@@ -52,6 +57,10 @@ fun MobileApp(
     initialLanguage: Language = Language.ENGLISH,
     onCountyChange: (Int?) -> Unit = {},
     onLanguageChange: (Language) -> Unit = {},
+    riskAlertsEnabled: Boolean = false,
+    onRiskAlertsChange: (Boolean) -> Unit = {},
+    crashReport: String? = null,
+    onCrashReportDelete: () -> Unit = {},
     statusLine: (@Composable (LoadState.Ready) -> Unit)? = null,
     darkTheme: Boolean = isSystemInDarkTheme(),
     initialTab: MobileTab = MobileTab.ALERTS,
@@ -64,6 +73,8 @@ fun MobileApp(
         var tab by rememberSaveable { mutableStateOf(initialTab) }
         var guideId by rememberSaveable { mutableStateOf(initialGuideId?.takeIf { SafetyGuides.byId(it) != null }) }
         var showAbout by rememberSaveable { mutableStateOf(initialShowAbout) }
+        var riskAlerts by rememberSaveable { mutableStateOf(riskAlertsEnabled) }
+        fun setRiskAlerts(on: Boolean) { riskAlerts = on; onRiskAlertsChange(on) }
         val guideTicks = remember { mutableStateMapOf<String, Boolean>() } // in memory only, by design
         val strings = Strings.of(language)
         val county = countyCode?.let { Counties.byCode(it) }
@@ -89,7 +100,7 @@ fun MobileApp(
         val countyBack = tab == MobileTab.ALERTS && county != null
         val guideBack = tab == MobileTab.SAFETY && guide != null
         if (showAbout) {
-            AboutPage(language, ::selectLanguage) { showAbout = false }
+            AboutPage(language, ::selectLanguage, riskAlerts, ::setRiskAlerts) { showAbout = false }
             return@TahadhariTheme
         }
         Scaffold(
@@ -139,9 +150,14 @@ fun MobileApp(
         ) { padding ->
             val inner = Modifier.padding(padding).consumeWindowInsets(padding)
             when (tab) {
-                MobileTab.ALERTS -> AnimatedContent(county, inner, transitionSpec = { fadeIn() togetherWith fadeOut() }) { c ->
-                    if (c == null) CountyPickerScreen(strings, onPick = { selectCounty(it.code) })
-                    else CountyScreen(c, language, statusLine, onChangeCounty = { selectCounty(null) })
+                MobileTab.ALERTS -> Column(inner) {
+                    if (crashReport != null) {
+                        CrashReportCard(crashReport, language, onCrashReportDelete, Modifier.padding(Spacing.lg))
+                    }
+                    AnimatedContent(county, Modifier.weight(1f), transitionSpec = { fadeIn() togetherWith fadeOut() }) { c ->
+                        if (c == null) CountyPickerScreen(strings, onPick = { selectCounty(it.code) })
+                        else CountyScreen(c, language, statusLine, riskAlerts, ::setRiskAlerts, onChangeCounty = { selectCounty(null) })
+                    }
                 }
                 MobileTab.SAFETY -> SafetyScreen(strings, language, guide?.id, { guideId = it }, guideTicks, inner)
                 MobileTab.EMERGENCY -> EmergencyScreen(strings, language, county, onChooseCounty = { tab = MobileTab.ALERTS }, inner)
@@ -167,6 +183,8 @@ private fun CountyScreen(
     county: County,
     language: Language,
     statusLine: (@Composable (LoadState.Ready) -> Unit)?,
+    riskAlerts: Boolean,
+    onRiskAlertsChange: (Boolean) -> Unit,
     onChangeCounty: () -> Unit,
 ) {
     val strings = Strings.of(language)
@@ -182,6 +200,10 @@ private fun CountyScreen(
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = { if (!refreshing) attempt++ }, modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
             CountyDetail(county, state, language, statusLine = statusLine ?: { DataStatusLine(it, Strings.of(language)) }) { attempt++ }
+            // Sharing is offered only with a forecast on screen, never after a failure.
+            (state as? LoadState.Ready)?.let { ready ->
+                ShareAlertButton(county, ready, language, Modifier.padding(horizontal = Spacing.lg).padding(bottom = Spacing.sm))
+            }
             // Visible alternative to pulling, for desktop, switch and screen-reader users.
             OutlinedButton(
                 onClick = { attempt++ },
@@ -201,6 +223,7 @@ private fun CountyScreen(
                 Spacer(Modifier.width(Spacing.sm))
                 Text(strings.changeCounty)
             }
+            RiskAlertsRow(riskAlerts, language, onRiskAlertsChange, Modifier.padding(horizontal = Spacing.lg).padding(top = Spacing.sm))
             CheckInRow(county, strings, Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.lg))
             Spacer(Modifier.height(Spacing.sm))
         }

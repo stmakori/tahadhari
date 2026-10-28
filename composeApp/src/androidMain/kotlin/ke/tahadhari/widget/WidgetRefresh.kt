@@ -15,6 +15,8 @@ import androidx.work.WorkerParameters
 import ke.tahadhari.AppGraph
 import ke.tahadhari.data.Counties
 import ke.tahadhari.data.store.AndroidStorage
+import ke.tahadhari.notify.RiskNotifier
+import ke.tahadhari.ui.mobile.RiskAlertState
 import ke.tahadhari.platform.AndroidPlatform
 import ke.tahadhari.ui.LoadState
 import ke.tahadhari.ui.loadCounty
@@ -53,6 +55,23 @@ internal object WidgetRefresh {
     private const val ONE_OFF = "tahadhari-widget-now"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
+    /**
+     * The 3-hour background refresh is needed when a widget is placed OR the user turned on risk
+     * notifications; otherwise it is cancelled (no pointless network use). Pass what you already
+     * know ([riskAlerts], [widgetPresent]); anything left null is read from preferences / the
+     * widget manager.
+     */
+    fun syncSchedule(context: Context, riskAlerts: Boolean? = null, widgetPresent: Boolean? = null) {
+        val app = context.applicationContext
+        scope.launch {
+            WidgetEnv.init(app)
+            val alerts = riskAlerts ?: AppGraph.preferences.load().riskAlertsEnabled
+            if (!alerts) RiskAlertState(AppGraph.store).clear() // a later opt-in starts fresh
+            val widget = widgetPresent ?: GlanceAppWidgetManager(app).getGlanceIds(TahadhariWidget::class.java).isNotEmpty()
+            if (alerts || widget) schedulePeriodic(app) else cancelAll(app)
+        }
+    }
+
     /** Every 3 hours, only with a network connection. Kept if already scheduled. */
     fun schedulePeriodic(context: Context) {
         val request = PeriodicWorkRequestBuilder<WidgetRefreshWorker>(3, TimeUnit.HOURS)
@@ -77,16 +96,19 @@ internal object WidgetRefresh {
     }
 
     /**
-     * Called from MainActivity.onStop. If the user changed county or language while the app was
-     * open, refresh the widget now. Does nothing when no widget is placed or nothing changed, so
-     * leaving the app normally costs no network.
+     * Called from MainActivity.onStop. Keeps the background schedule in step with the widget and
+     * risk-alert settings. If the user changed county or language while the app was open, refresh
+     * the widget now. Does nothing more when no widget is placed or nothing changed, so leaving the
+     * app normally costs no network.
      */
     fun onAppStopped(context: Context) {
         val app = context.applicationContext
         scope.launch {
             WidgetEnv.init(app)
-            if (GlanceAppWidgetManager(app).getGlanceIds(TahadhariWidget::class.java).isEmpty()) return@launch
             val prefs = AppGraph.preferences.load()
+            val hasWidget = GlanceAppWidgetManager(app).getGlanceIds(TahadhariWidget::class.java).isNotEmpty()
+            if (prefs.riskAlertsEnabled || hasWidget) schedulePeriodic(app) else cancelAll(app)
+            if (!hasWidget) return@launch
             if (seenKey(prefs.countyCode, prefs.language.name) != WidgetStatus.lastSeen(app)) {
                 WidgetStatus.setLastFailed(app, false)
                 refreshNow(app)
@@ -97,7 +119,10 @@ internal object WidgetRefresh {
     fun seenKey(countyCode: Int?, language: String) = "$countyCode:$language"
 }
 
-/** Downloads the saved county's forecast (which also updates the cache), then redraws every widget. */
+/**
+ * Downloads the saved county's forecast (which also updates the cache), redraws every widget and,
+ * if the user opted in, checks whether the risk rose to High or Severe (see `decideRiskAlert`).
+ */
 class WidgetRefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val context = applicationContext
@@ -107,7 +132,10 @@ class WidgetRefreshWorker(context: Context, params: WorkerParameters) : Coroutin
         val county = prefs.countyCode?.let { Counties.byCode(it) }
         if (county != null) {
             // loadCounty falls back to the saved forecast on network errors; Failed means nothing usable.
-            WidgetStatus.setLastFailed(context, loadCounty(county) is LoadState.Failed)
+            val loaded = loadCounty(county)
+            WidgetStatus.setLastFailed(context, loaded is LoadState.Failed)
+            // Cached or failed data never notifies (decided in checkRiskAlert).
+            if (prefs.riskAlertsEnabled) RiskNotifier.checkAndNotify(context, county, loaded, prefs.language)
         }
         TahadhariWidget().updateAll(context)
         return Result.success()

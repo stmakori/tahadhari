@@ -4,6 +4,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Optional "Use my location" on the county picker: asked at runtime, coarse only. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Optional "notify me if risk rises" switch: asked at runtime on Android 13+, off by default. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- Location and telephony are optional, so the app installs on tablets and devices without them.
          Calls use ACTION_DIAL (the user presses call), so no CALL_PHONE permission is needed. -->
@@ -12,6 +14,7 @@
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
+        android:name=".TahadhariApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"

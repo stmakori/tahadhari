@@ -11,11 +11,13 @@ import kotlinx.serialization.json.Json
 /**
  * What the user chose last time. [countyCode] is null until they pick a county.
  * [onboardingDone] is true once the first-launch intro was finished or skipped.
+ * [riskAlertsEnabled] is the opt-in "notify me if risk rises to High or Severe" switch (Android); off by default.
  */
 data class UserPreferences(
     val countyCode: Int? = null,
     val language: Language = Language.ENGLISH,
     val onboardingDone: Boolean = false,
+    val riskAlertsEnabled: Boolean = false,
 )
 
 /** Persists [UserPreferences]. Missing, corrupt or unknown values fall back to defaults. */
@@ -23,7 +25,7 @@ class Preferences(private val store: KeyValueStore) {
     private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
     @Serializable
-    private data class Stored(val countyCode: Int? = null, val language: String? = null, val onboardingDone: Boolean = false)
+    private data class Stored(val countyCode: Int? = null, val language: String? = null, val onboardingDone: Boolean = false, val riskAlertsEnabled: Boolean = false)
 
     suspend fun load(): UserPreferences {
         val text = store.get(KEY) ?: return UserPreferences()
@@ -38,17 +40,20 @@ class Preferences(private val store: KeyValueStore) {
             countyCode = stored.countyCode?.takeIf { Counties.byCode(it) != null },
             language = Language.entries.firstOrNull { it.name == stored.language } ?: Language.ENGLISH,
             onboardingDone = stored.onboardingDone,
+            riskAlertsEnabled = stored.riskAlertsEnabled,
         )
     }
 
     suspend fun save(prefs: UserPreferences): Boolean =
-        store.put(KEY, json.encodeToString(Stored.serializer(), Stored(prefs.countyCode, prefs.language.name, prefs.onboardingDone)))
+        store.put(KEY, json.encodeToString(Stored.serializer(), Stored(prefs.countyCode, prefs.language.name, prefs.onboardingDone, prefs.riskAlertsEnabled)))
 
     suspend fun setCounty(countyCode: Int?): Boolean = update { it.copy(countyCode = countyCode) }
 
     suspend fun setLanguage(language: Language): Boolean = update { it.copy(language = language) }
 
     suspend fun setOnboardingDone(done: Boolean): Boolean = update { it.copy(onboardingDone = done) }
+
+    suspend fun setRiskAlertsEnabled(enabled: Boolean): Boolean = update { it.copy(riskAlertsEnabled = enabled) }
 
     private val updateLock = Mutex()
 
