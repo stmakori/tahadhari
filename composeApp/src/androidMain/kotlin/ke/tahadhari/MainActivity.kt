@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import ke.tahadhari.data.store.AndroidStorage
 import ke.tahadhari.platform.AndroidPlatform
 import ke.tahadhari.ui.MobileRoot
+import ke.tahadhari.widget.WidgetRefresh
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -15,5 +16,11 @@ class MainActivity : ComponentActivity() {
         AndroidStorage.init(this) // before AppGraph is used, so the offline cache and preferences persist
         AndroidPlatform.init(this) // dialer and share sheet intents
         setContent { MobileRoot() }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // County/language changes are saved while the app is open; refresh the home-screen widget if they changed.
+        WidgetRefresh.onAppStopped(this)
     }
 }

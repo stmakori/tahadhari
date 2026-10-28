@@ -146,6 +146,15 @@ data class Strings(
     val locationDenied: String,
     val locationUnavailable: String,
     val locationOutsideKenya: String,
+    // --- Android home-screen widget ---
+    val widgetNoCounty: String,
+    val widgetNotOfficial: String,
+    val widgetTapToRetry: String,
+    val widgetSavedForecast: String,
+    /** [ratio] is the forecast river peak divided by its recent level, e.g. "2.4". */
+    val widgetRiverRising: (ratio: String) -> String,
+    val widgetSavedOn: (isoDate: String) -> String,
+    val widgetNoDataBody: String,
 ) {
     companion object {
         val english = Strings(
@@ -307,6 +316,13 @@ data class Strings(
             locationDenied = "Location permission was not given. You can choose your county from the list.",
             locationUnavailable = "Couldn't find your location. Turn on location, or choose your county from the list.",
             locationOutsideKenya = "You seem to be outside Kenya. Choose a county from the list.",
+            widgetNoCounty = "Open Tahadhari to choose your county",
+            widgetNotOfficial = "Not an official warning",
+            widgetTapToRetry = "Tap to retry",
+            widgetSavedForecast = "Saved forecast",
+            widgetRiverRising = { x -> "River rising: $x× recent level" },
+            widgetSavedOn = { "Saved forecast from ${Dates.shortDate(it, Language.ENGLISH)}" },
+            widgetNoDataBody = "Couldn't load the forecast",
         )
 
         val swahili = Strings(
@@ -482,6 +498,13 @@ data class Strings(
             locationDenied = "Ruhusa ya mahali haikutolewa. Unaweza kuchagua kaunti yako kwenye orodha.",
             locationUnavailable = "Imeshindwa kupata mahali ulipo. Washa huduma ya mahali, au chagua kaunti yako kwenye orodha.",
             locationOutsideKenya = "Inaonekana uko nje ya Kenya. Chagua kaunti kwenye orodha.",
+            widgetNoCounty = "Fungua Tahadhari kuchagua kaunti yako",
+            widgetNotOfficial = "Si tahadhari rasmi",
+            widgetTapToRetry = "Gusa ujaribu tena",
+            widgetSavedForecast = "Utabiri uliohifadhiwa",
+            widgetRiverRising = { x -> "Mto unapanda: mara $x ya kiwango cha hivi karibuni" },
+            widgetSavedOn = { "Utabiri uliohifadhiwa wa ${Dates.shortDate(it, Language.SWAHILI)}" },
+            widgetNoDataBody = "Imeshindwa kupakia utabiri",
         )
 
         fun of(language: Language) = if (language == Language.SWAHILI) swahili else english

@@ -39,6 +39,8 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.androidx.glance.appwidget)
+            implementation(libs.androidx.work.runtime.ktx)
         }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
