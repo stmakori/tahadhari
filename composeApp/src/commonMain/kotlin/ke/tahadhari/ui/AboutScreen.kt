@@ -103,7 +103,7 @@ private fun RiskTableCard(strings: Strings, thresholds: RiskThresholds = RiskThr
                     Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                         RiskMark(level, Modifier.size(16.dp))
                         CappedFontScale {
-                            Text(strings.risk(level), style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2)
+                            Text(strings.risk(level), style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center) // no line cap: narrow fonts wrap "Kubwa sana" to 3 lines
                         }
                     }
                 }
