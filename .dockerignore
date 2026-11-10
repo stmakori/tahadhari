@@ -1,0 +1,18 @@
+# Keep the server image build small and free of local secrets.
+.git
+.github
+.gradle
+.kotlin
+.idea
+.claude
+**/build
+docs
+tools
+kotlin-js-store
+local.properties
+secrets.properties
+keystore.properties
+*.jks
+*.keystore
+*.apk
+*.aab

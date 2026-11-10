@@ -42,14 +42,27 @@ fun main() {
     val llm = AnthropicCompleter(config.apiKey, config.model)
     log.info("Tahadhari AI server on port ${config.port}, model ${config.model}")
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
-        module(llm, requestsPerHour = config.requestsPerHour, allowedOrigins = config.allowedOrigins)
+        module(llm, requestsPerHour = config.requestsPerHour, allowedOrigins = config.allowedOrigins, trustedProxyHops = config.trustedProxyHops)
     }.start(wait = true)
+}
+
+/**
+ * The address to rate-limit by. Behind a hosting platform every request comes from its load balancer,
+ * so with [trustedProxyHops] = N the client is the Nth entry from the right of X-Forwarded-For (each
+ * trusted proxy appends one). Entries further left are client-supplied and ignored, so they cannot be
+ * used to dodge the limit. Too few entries means the request skipped the proxies: use the socket address.
+ */
+fun clientKey(forwardedFor: String?, remoteHost: String, trustedProxyHops: Int): String {
+    if (trustedProxyHops <= 0 || forwardedFor == null) return remoteHost
+    val hops = forwardedFor.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    return hops.getOrNull(hops.size - trustedProxyHops) ?: remoteHost
 }
 
 fun Application.module(
     llm: LlmCompleter,
     requestsPerHour: Int = 60,
     allowedOrigins: List<String> = DEFAULT_ALLOWED_ORIGINS,
+    trustedProxyHops: Int = 0,
 ) {
     val cache = ExplanationCache()
 
@@ -74,7 +87,7 @@ fun Application.module(
     install(RateLimit) {
         register(explainLimit) {
             rateLimiter(limit = requestsPerHour, refillPeriod = 1.hours)
-            requestKey { call -> call.request.origin.remoteHost }
+            requestKey { call -> clientKey(call.request.headers[HttpHeaders.XForwardedFor], call.request.origin.remoteHost, trustedProxyHops) }
         }
     }
 

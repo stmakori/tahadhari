@@ -61,6 +61,24 @@ jobs:
             **/build/test-results/
           if-no-files-found: ignore
 
+  # The deployable AI server image (Dockerfile at the root) builds and answers /health.
+  # A dummy key is enough: /health never calls the AI.
+  server-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the AI server image
+        run: docker build -t tahadhari-server .
+
+      - name: Start it and check /health
+        run: |
+          docker run -d --name ai -p 8080:8080 -e ANTHROPIC_API_KEY=ci-dummy tahadhari-server
+          for i in $(seq 1 60); do curl -fsS localhost:8080/health && exit 0; sleep 1; done
+          docker logs ai
+          exit 1
+
   # Smoke test of the phone app on an Android emulator (intro, county, Safety, Emergency, Back).
   # The network may be unavailable or flaky on CI: the test accepts a risk card or the error state.
   android-emulator:

@@ -19,13 +19,15 @@ class AiExplainer(
     private val client: ExplainClient,
     private val fallback: TemplateExplainer = TemplateExplainer(),
     private val timeoutMillis: Long = 12_000,
+    /** Current official advisory for a county, passed to the AI as data. Never affects the level. */
+    private val advisoryFor: (County) -> Advisory? = { null },
 ) : AlertExplainer {
 
     private val cache = mutableMapOf<ExplainRequest, Explanation>()
     private val lock = Mutex()
 
     override suspend fun explain(county: County, assessment: RiskAssessment, language: Language): Explanation {
-        val request = toRequest(county, assessment, language)
+        val request = toRequest(county, assessment, language, advisoryFor(county))
         lock.withLock { cache[request] }?.let { return it }
 
         return try {
@@ -43,7 +45,7 @@ class AiExplainer(
     }
 
     companion object {
-        fun toRequest(county: County, a: RiskAssessment, language: Language): ExplainRequest {
+        fun toRequest(county: County, a: RiskAssessment, language: Language, advisory: Advisory? = null): ExplainRequest {
             val day = a.wettestDay
             return ExplainRequest(
                 language = if (language == Language.SWAHILI) "sw" else "en",
@@ -69,6 +71,7 @@ class AiExplainer(
                         is RiskReason.UpstreamRain -> "UPSTREAM_RAIN"
                     }
                 },
+                advisoryText = advisory?.let(Advisories::promptText),
             )
         }
     }

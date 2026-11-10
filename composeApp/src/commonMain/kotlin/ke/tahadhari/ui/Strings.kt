@@ -247,6 +247,8 @@ data class Strings(
     val upstream: UpstreamStrings,
     // Official forecast link (own class: see the note above about the constructor size).
     val official: OfficialStrings,
+    // Official advisory card (own class, same reason).
+    val advisory: AdvisoryStrings,
 ) {
     companion object {
         val english = Strings(
@@ -553,6 +555,15 @@ data class Strings(
                 button = "Official KMD forecast",
                 note = "Official warnings come from the Kenya Meteorological Department (KMD) and your county.",
                 buttonHint = "Opens meteo.go.ke in your browser",
+            ),
+            advisory = AdvisoryStrings(
+                title = "Official advisory",
+                issued = { issuer, from, to -> "$issuer · valid $from to $to" },
+                showMore = "Show full advisory",
+                showLess = "Show less",
+                openSource = "Open the official source",
+                openSourceHint = "Opens the advisory page in your browser",
+                originalLanguage = null,
             ),
         )
 
@@ -878,6 +889,16 @@ data class Strings(
                 note = "Tahadhari rasmi hutoka Idara ya Hali ya Hewa Kenya (KMD) na kaunti yako.", // TODO(review)
                 buttonHint = "Hufungua meteo.go.ke kwenye kivinjari chako", // TODO(review)
             ),
+            // TODO(review): Swahili for the official advisory card needs a fluent speaker's check.
+            advisory = AdvisoryStrings(
+                title = "Ushauri rasmi",
+                issued = { issuer, from, to -> "$issuer · halali $from hadi $to" },
+                showMore = "Onyesha ushauri wote",
+                showLess = "Onyesha kidogo",
+                openSource = "Fungua chanzo rasmi",
+                openSourceHint = "Hufungua ukurasa wa ushauri kwenye kivinjari chako",
+                originalLanguage = "Ushauri huu umeandikwa kwa Kiingereza kama ulivyotolewa.",
+            ),
         )
 
         fun of(language: Language) = if (language == Language.SWAHILI) swahili else english
@@ -905,6 +926,20 @@ data class OfficialStrings(
     val button: String,
     val note: String,
     val buttonHint: String,
+)
+
+/**
+ * Texts for the official advisory card (see [Strings.advisory]). [originalLanguage] is shown when the
+ * advisory (published in English) is displayed in another language; null in English.
+ */
+data class AdvisoryStrings(
+    val title: String,
+    val issued: (issuer: String, from: String, to: String) -> String,
+    val showMore: String,
+    val showLess: String,
+    val openSource: String,
+    val openSourceHint: String,
+    val originalLanguage: String?,
 )
 
 /** About texts in one language (see [Strings.aboutPage]). */

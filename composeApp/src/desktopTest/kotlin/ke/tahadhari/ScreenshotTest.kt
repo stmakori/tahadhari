@@ -62,8 +62,27 @@ class ScreenshotTest {
         }
     }
 
+    /** Layout check only: the advisory below is placeholder text, not a real KMD advisory. */
     @Test
-    fun heroLevels() = listOf(false, true).forEach { dark ->
+    fun advisoryCard() = listOf(false, true).forEach { dark ->
+        listOf(Language.ENGLISH, Language.SWAHILI).forEach { lang ->
+            val sample = Advisory(
+                issuer = "Kenya Meteorological Department",
+                title = "Sample county weekly forecast",
+                validFrom = "2026-11-02", validTo = "2026-11-08",
+                sourceUrl = "https://meteo.go.ke/our-products/county-forecasts/",
+                text = "Placeholder advisory text for the layout check. ".repeat(8).trim(),
+            )
+            shoot("advisory-${lang.name.lowercase()}", dark, heightDp = 420) {
+                Surface(color = MaterialTheme.colorScheme.surface) {
+                    Column(Modifier.fillMaxSize().padding(Spacing.lg)) { AdvisoryCard(sample, lang) }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun heroLevels()= listOf(false, true).forEach { dark ->
         shoot("hero-levels", dark, heightDp = 1150) {
             val county = Counties.byCode(42)!!
             Surface(color = MaterialTheme.colorScheme.surface) {

@@ -84,7 +84,7 @@ If validation is not ready, delete this block and extend section 5 by 15 s.
 
 | Time | On screen | Voice-over | Caption |
 |---|---|---|---|
-| 2:42 to 2:55 | The disclaimer text full screen, then GitHub URL and the APK / installer download. | "Tahadhari explains forecasts. It is not an official warning: follow the Kenya Meteorological Service and your county advisories. It is open source under the MIT licence. Try it, and share it with someone who needs it." | "Not an official warning. Follow KMD and county advisories." / "github.com/<your-repo>" [TODO URL] |
+| 2:42 to 2:55 | The disclaimer text full screen, then GitHub URL and the APK / installer download. | "Tahadhari explains forecasts. It is not an official warning: follow the Kenya Meteorological Service and your county advisories. It is open source under the MIT licence. Try it, and share it with someone who needs it." | "Not an official warning. Follow KMD and county advisories." / "github.com/stmakori/tahadhari" |
 
 Total about 2:55. If over 3:00, shorten section 3 first.
 

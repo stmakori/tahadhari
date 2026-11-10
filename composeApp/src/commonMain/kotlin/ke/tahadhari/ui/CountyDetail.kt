@@ -28,6 +28,7 @@ import ke.tahadhari.data.County
 import ke.tahadhari.domain.*
 import ke.tahadhari.platform.openOfficialUrl
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import kotlin.math.roundToInt
 
 private fun Double.oneDecimal(): String = ((this * 10).roundToInt() / 10.0).toString()
@@ -39,6 +40,7 @@ private fun Double.oneDecimal(): String = ((this * 10).roundToInt() / 10.0).toSt
  * @param statusLine slot rendered right under the hero card when data is ready, e.g. an
  *   "Updated 10:30" or "Showing saved data" line built from the [LoadState.Ready] it receives.
  * @param explainer source of the plain-language explanation (AI with template fallback by default).
+ * @param advisory the official advisory valid today for a county, shown with a link to its source.
  * @param onRetry called from the error state.
  */
 @Composable
@@ -50,6 +52,7 @@ fun CountyDetail(
     statusLine: (@Composable (LoadState.Ready) -> Unit)? = { DataStatusLine(it, Strings.of(language)) },
     explainer: AlertExplainer = AppGraph.explainer,
     heavyRainChance: (suspend (County) -> HeavyRainChance?)? = { AppGraph.ensemble.chanceFor(it) },
+    advisory: (County) -> Advisory? = AppGraph::currentAdvisory,
     onRetry: () -> Unit,
 ) {
     val strings = Strings.of(language)
@@ -67,6 +70,7 @@ fun CountyDetail(
                 county, state.forecast, state.assessment, language, explainer,
                 statusLine = statusLine?.let { slot -> { slot(state) } },
                 heavyRainChance = heavyRainChance,
+                advisory = remember(county.code) { advisory(county) },
             )
         }
         if (state !is LoadState.Loading) OfficialForecastLink(strings)
@@ -110,6 +114,7 @@ internal fun CountyReadyContent(
     explainer: AlertExplainer,
     statusLine: (@Composable () -> Unit)? = null,
     heavyRainChance: (suspend (County) -> HeavyRainChance?)? = null,
+    advisory: Advisory? = null,
 ) {
     val strings = Strings.of(language)
     var explanation by remember(county.code, language, assessment) { mutableStateOf<Explanation?>(null) }
@@ -121,6 +126,7 @@ internal fun CountyReadyContent(
     RiskHeroCard(county, assessment, language)
     statusLine?.invoke()
     ExplanationCard(explanation, strings)
+    advisory?.let { AdvisoryCard(it, language) }
     SectionCard {
         SectionTitle(AppIcons.Drop, strings.rainNext7)
         RainChart(forecast.days, language, today = forecast.fetchedAtDate)
@@ -239,6 +245,48 @@ fun ExplanationCard(explanation: Explanation?, strings: Strings, modifier: Modif
             InfoChip(if (ai) AppIcons.Sparkle else AppIcons.Document, if (ai) strings.aiLabel else strings.offlineLabel)
             Text(explanation.headline, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
             Text(explanation.body, style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+/**
+ * An official advisory, word for word as published, with who issued it, its validity and a link
+ * to the source. Long text is folded to a few lines until the reader asks for all of it.
+ */
+@Composable
+fun AdvisoryCard(advisory: Advisory, language: Language, modifier: Modifier = Modifier) {
+    val strings = Strings.of(language).advisory
+    var expanded by remember(advisory) { mutableStateOf(false) }
+    var folded by remember(advisory) { mutableStateOf(false) }
+    SectionCard(modifier.testTag("advisory_card")) {
+        SectionTitle(AppIcons.Document, strings.title)
+        Text(advisory.title, style = MaterialTheme.typography.titleMedium)
+        Text(
+            strings.issued(advisory.issuer, Dates.shortDate(advisory.validFrom, language), Dates.shortDate(advisory.validTo, language)),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        strings.originalLanguage?.let {
+            Text(it, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(
+            advisory.text,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = if (expanded) Int.MAX_VALUE else 4,
+            overflow = TextOverflow.Ellipsis,
+            onTextLayout = { if (!expanded) folded = it.hasVisualOverflow },
+        )
+        if (expanded || folded) {
+            TextButton(onClick = { expanded = !expanded }, modifier = Modifier.heightIn(min = Spacing.touch)) {
+                Text(if (expanded) strings.showLess else strings.showMore)
+            }
+        }
+        OutlinedButton(
+            onClick = { openOfficialUrl(advisory.sourceUrl) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = Spacing.touch).testTag("advisory_source")
+                .semantics { stateDescription = strings.openSourceHint },
+        ) {
+            Text(strings.openSource, textAlign = TextAlign.Center)
         }
     }
 }

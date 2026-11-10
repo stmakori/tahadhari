@@ -197,7 +197,7 @@ The server uses `claude-haiku-5-5` by default (override with `TAHADHARI_MODEL`).
 the offline text. Two settings are needed:
 
 - On the server, set `TAHADHARI_ALLOWED_ORIGINS` to the full origin of the web app, for example
-  `https://user.github.io` (comma-separate several). The default allows only the local dev server
+  `https://stmakori.github.io` (comma-separate several). The default allows only the local dev server
   (`http://localhost:8080`, `http://127.0.0.1:8080`). Only `POST /v1/explain` with the
   `Content-Type` header is allowed, without credentials.
 - In the web page, set `<meta name="tahadhari-proxy-url" content="https://your-server">` in
@@ -207,6 +207,50 @@ the offline text. Two settings are needed:
   and variables, Actions, Variables); leave it unset for offline text.
 
 The AI only receives forecast facts calculated by the app. It never decides the risk level.
+
+### Official advisories
+
+KMD has no public API for its weekly county forecasts, so advisories are bundled in
+`composeApp/src/commonMain/kotlin/ke/tahadhari/data/BundledAdvisories.kt`. Each entry is copied word
+for word from a `.go.ke` page, with its validity dates and link. While an advisory is valid, the
+county screen shows an **Official advisory** card with the text and a button to the source. The AI
+also gets the text, as data inside `<advisory>` tags, so it can mention it. Expired advisories are
+ignored automatically and never change the risk level. `AdvisoriesTest` checks every entry (https
+`.go.ke` link, dates, length, county codes). The file's header comment explains how to add one.
+
+### Deploy the AI server
+
+The `Dockerfile` at the repository root builds only the server, without the Android SDK, and runs it
+on `PORT` (default 8080). It works on any container host (Google Cloud Run, Render, Railway,
+Fly.io). CI builds the image and checks `/health` on every push. For example, on Cloud Run:
+
+```bash
+gcloud run deploy tahadhari-ai --source . --region europe-west1 --allow-unauthenticated \
+  --set-secrets ANTHROPIC_API_KEY=anthropic-api-key:latest \
+  --set-env-vars TAHADHARI_TRUSTED_PROXY_HOPS=1,TAHADHARI_ALLOWED_ORIGINS=https://stmakori.github.io
+```
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | (required) | Store it as a secret on the host, never in the image or the repo |
+| `TAHADHARI_MODEL` | `claude-haiku-5-5` | Model id |
+| `TAHADHARI_REQUESTS_PER_HOUR` | 60 | Per caller address |
+| `TAHADHARI_TRUSTED_PROXY_HOPS` | 0 | Load balancers in front of the server that append to `X-Forwarded-For`. Most hosts have one, so set it to `1` (check your host's docs). With `0` behind a load balancer, all users share one rate limit |
+| `TAHADHARI_ALLOWED_ORIGINS` | local dev server | Web build origins (see above) |
+
+Then put the HTTPS URL in `local.properties` (`tahadhari.proxyUrl=https://...`) before building the
+APK, in `TAHADHARI_PROXY_URL` for desktop, and in the `TAHADHARI_PROXY_URL` repository variable for
+the web build. Also set a monthly spend limit on the API key in the Anthropic Console.
+
+### Example outputs
+
+[`docs/ai-examples.md`](docs/ai-examples.md) shows real explanations for 12 counties in English and
+Swahili: the exact facts the AI got, its reply, and a check for numbers that were not in the facts.
+Regenerate it with a running server:
+
+```bash
+TAHADHARI_AI_EXAMPLES=1 ./gradlew :composeApp:desktopTest --tests "ke.tahadhari.AiExamplesTest"
+```
 
 ## How risk is calculated
 
@@ -280,6 +324,8 @@ That is why every screen says Tahadhari is guidance, not an official warning. Re
   Per-county pages exist but their addresses contain that week's dates, so only the index is linked.
   Also checked: `/our-products/daily-forecast/`, `/5-day-forecast/`, `/monthly-forecast/` and
   `/weather-warnings/`. KMD has no public API; the app only opens the page, it does not read it.
+- Official advisories (when bundled): copied word for word from KMD or county government `.go.ke`
+  pages, shown with their issuer, validity and a link to the source (see "Official advisories").
 - Safety guide content is based on Kenya Red Cross, Kenya Ministry of Health, WHO, USGS and US
   National Weather Service guidance. Each guide lists its sources in the app.
 
