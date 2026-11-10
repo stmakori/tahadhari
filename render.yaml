@@ -1,0 +1,27 @@
+# Render Blueprint for the Tahadhari AI server (Dockerfile at the repo root, server only).
+# Deploy: Render dashboard > New > Blueprint > pick this repository. Render asks for ANTHROPIC_API_KEY
+# once and stores it as a secret; it is never in the repo or the image.
+services:
+  - type: web
+    name: tahadhari-ai
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TAHADHARI_ALLOWED_ORIGINS
+        value: https://stmakori.github.io
+      # 0 = one shared rate limit for all callers (safe default, also caps API spend).
+      # Raise only after checking how many proxies Render puts in X-Forwarded-For.
+      - key: TAHADHARI_TRUSTED_PROXY_HOPS
+        value: "0"
+      - key: TAHADHARI_REQUESTS_PER_HOUR
+        value: "60"
+      # The free plan has 512 MB; keep the JVM heap well inside it.
+      - key: JAVA_OPTS
+        value: -XX:MaxRAMPercentage=70 -XX:+UseSerialGC

@@ -222,7 +222,16 @@ ignored automatically and never change the risk level. `AdvisoriesTest` checks e
 
 The `Dockerfile` at the repository root builds only the server, without the Android SDK, and runs it
 on `PORT` (default 8080). It works on any container host (Google Cloud Run, Render, Railway,
-Fly.io). CI builds the image and checks `/health` on every push. For example, on Cloud Run:
+Fly.io). CI builds the image and checks `/health` on every push.
+
+**Render (used for the hosted server):** `render.yaml` is a Blueprint. In the Render dashboard choose
+**New > Blueprint**, pick this repository and paste your Anthropic key when asked for
+`ANTHROPIC_API_KEY`. Render builds the Dockerfile, serves it over HTTPS at
+`https://tahadhari-ai.onrender.com` (or similar) and redeploys on every push to `main`. The free plan
+sleeps after 15 minutes without traffic; the first request after that takes longer than the app's
+12-second timeout, so it shows the offline explanation once and the AI text on the next refresh.
+
+Or on Google Cloud Run:
 
 ```bash
 gcloud run deploy tahadhari-ai --source . --region europe-west1 --allow-unauthenticated \
