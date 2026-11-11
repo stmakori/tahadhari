@@ -1,9 +1,13 @@
 package ke.tahadhari.ai
 
+/** The hosted AI server (Render). Keep in sync with the Android default in composeApp/build.gradle.kts. */
+const val HOSTED_PROXY_URL = "https://tahadhari-ai.onrender.com"
+
 /**
  * Base URL of the Tahadhari AI server, or blank to disable AI and use offline text only.
- * Android: set tahadhari.proxyUrl in local.properties (default: emulator -> your computer).
- * Desktop: set the TAHADHARI_PROXY_URL environment variable (default: http://localhost:8080).
+ * Android: tahadhari.proxyUrl in local.properties (default: [HOSTED_PROXY_URL]).
+ * Desktop: the TAHADHARI_PROXY_URL environment variable (default: [HOSTED_PROXY_URL]).
+ * For a server on your own computer use http://localhost:8080 (desktop) or http://10.0.2.2:8080 (emulator).
  */
 expect fun aiProxyUrl(): String
 

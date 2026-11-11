@@ -9,7 +9,8 @@ with clear advice on what to do.
 
 - **Android**: pick your county, see the 7-day rainfall outlook, flood risk and what to do.
 - **Desktop dashboard**: see all 47 counties ranked by risk, for county disaster teams and responders.
-- **Web**: the same dashboard in a browser, with nothing to install.
+- **Web**: the same dashboard in a browser, with nothing to install:
+  **[stmakori.github.io/tahadhari](https://stmakori.github.io/tahadhari/)** (add `?mobile` for the phone layout).
 
 ![Tahadhari walkthrough: intro, county picker, Tana River in English and Swahili, safety guide, emergency, dashboard](docs/demo.gif)
 
@@ -139,7 +140,8 @@ the JDK so it picks up the variable.
 
 **Web version.** The dashboard also runs in the browser (Kotlin/Wasm; needs a recent Chrome,
 Firefox, Edge or Safari). Add `?mobile` to the URL for the phone layout. On the web, explanations
-use the offline text and numbers are copied to the clipboard instead of dialled.
+use AI only when the page was built with a server URL (the published site is; a local build shows
+the offline text), and numbers are copied to the clipboard instead of dialled.
 `.github/workflows/pages.yml` publishes it to GitHub Pages on every push to `main`. In the repo
 settings, set **Pages → Source** to **GitHub Actions**.
 
@@ -178,18 +180,25 @@ settings, set **Pages → Source** to **GitHub Actions**.
 ## AI explanations (optional)
 
 The app works fully offline with built-in English and Swahili explanations. With the AI server
-running, it shows friendlier, county-specific explanations written by Claude, and falls back to
+reachable, it shows friendlier, county-specific explanations written by Claude, and falls back to
 the offline text automatically if the server is slow or unavailable.
+
+**Nothing to set up to try it.** The Android and desktop apps use the hosted server at
+`https://tahadhari-ai.onrender.com` by default. It runs on a free plan that sleeps when idle, so the
+first explanation after a quiet spell may be the offline text; refresh after a few seconds for the
+AI version. The server allows 60 AI requests per hour in total.
+
+To run your own server instead:
 
 ```bash
 export ANTHROPIC_API_KEY=your-key       # never commit this
 ./gradlew :server:run                   # starts on http://localhost:8080
-./gradlew :composeApp:run               # desktop picks up the server automatically
+TAHADHARI_PROXY_URL=http://localhost:8080 ./gradlew :composeApp:run
 ```
 
-For Android, the emulator reaches your computer at `10.0.2.2`, which is the default. For a real
-phone, deploy the server with HTTPS and add `tahadhari.proxyUrl=https://your-server` to
-`local.properties`.
+For Android, add `tahadhari.proxyUrl=http://10.0.2.2:8080` to `local.properties` (the emulator's
+address for your computer), or your own `https://` server for a real phone. Leave it blank
+(`tahadhari.proxyUrl=`) to build without AI.
 
 The server uses `claude-haiku-5-5` by default (override with `TAHADHARI_MODEL`).
 

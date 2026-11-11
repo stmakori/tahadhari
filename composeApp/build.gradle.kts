@@ -73,12 +73,13 @@ kotlin {
     }
 }
 
-// AI proxy URL for Android. Override in local.properties: tahadhari.proxyUrl=https://your-server
-// Default 10.0.2.2 is how the Android emulator reaches a server running on your computer.
+// AI proxy URL for Android. Default: the hosted server (same as HOSTED_PROXY_URL in ProxyConfig.kt).
+// Override in local.properties: tahadhari.proxyUrl=http://10.0.2.2:8080 reaches a server on your
+// computer from the emulator; blank means offline text only.
 val localProps = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
-val proxyUrl: String = localProps.getProperty("tahadhari.proxyUrl") ?: "http://10.0.2.2:8080"
+val proxyUrl: String = localProps.getProperty("tahadhari.proxyUrl") ?: "https://tahadhari-ai.onrender.com"
 
 // Release signing: keystore.properties (ignored by version control, see keystore.properties.example)
 // or TAHADHARI_KEYSTORE_* environment variables. Both absent = debug-signed release (warning).
