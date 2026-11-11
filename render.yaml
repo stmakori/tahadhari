@@ -23,7 +23,7 @@ services:
       - key: TAHADHARI_TRUSTED_PROXY_HOPS
         value: "0"
       - key: TAHADHARI_REQUESTS_PER_HOUR
-        value: "60"
+        value: "20"
       # The free plan has 512 MB; keep the JVM heap well inside it.
       - key: JAVA_OPTS
         value: -XX:MaxRAMPercentage=70 -XX:+UseSerialGC

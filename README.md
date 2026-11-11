@@ -186,7 +186,8 @@ the offline text automatically if the server is slow or unavailable.
 **Nothing to set up to try it.** The Android and desktop apps use the hosted server at
 `https://tahadhari-ai.onrender.com` by default. It runs on a free plan that sleeps when idle, so the
 first explanation after a quiet spell may be the offline text; refresh after a few seconds for the
-AI version. The server allows 60 AI requests per hour in total.
+AI version. The hosted server allows 20 AI requests per hour in total, to cap API spend; after that the app
+shows the offline text until the hour is up.
 
 To run your own server instead:
 
