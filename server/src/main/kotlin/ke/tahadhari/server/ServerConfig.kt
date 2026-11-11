@@ -14,7 +14,7 @@ data class ServerConfig(
 ) {
     companion object {
         fun fromEnv(env: Map<String, String> = System.getenv()) = ServerConfig(
-            apiKey = env["ANTHROPIC_API_KEY"]?.takeIf { it.isNotBlank() }
+            apiKey = env["ANTHROPIC_API_KEY"]?.trim()?.takeIf { it.isNotEmpty() }
                 ?: error("Set the ANTHROPIC_API_KEY environment variable"),
             model = env["TAHADHARI_MODEL"] ?: "claude-haiku-5-5",
             port = env["PORT"]?.toIntOrNull() ?: 8080,

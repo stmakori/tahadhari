@@ -88,4 +88,9 @@ class CorsTest {
         assertEquals(listOf("https://a.github.io", "http://localhost:8080"), cfg.allowedOrigins)
         assertEquals(DEFAULT_ALLOWED_ORIGINS, ServerConfig.fromEnv(base + ("TAHADHARI_ALLOWED_ORIGINS" to "  ")).allowedOrigins)
     }
+
+    @Test fun configTrimsPastedApiKey() {
+        // Keys pasted into a host dashboard often carry a trailing space or newline, which Anthropic rejects (401).
+        assertEquals("sk-test", ServerConfig.fromEnv(mapOf("ANTHROPIC_API_KEY" to "  sk-test\n")).apiKey)
+    }
 }
