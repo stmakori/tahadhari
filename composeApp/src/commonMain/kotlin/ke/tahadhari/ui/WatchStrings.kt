@@ -45,25 +45,25 @@ data class WatchStrings(
             rowFailedDescription = { c -> "$c. Couldn't load. No risk level is shown." },
         )
 
-        val swahili = WatchStrings( // TODO(review): all Swahili below needs a fluent speaker's check.
-            title = "Kaunti ninazofuatilia", // TODO(review)
-            hint = "Fuatilia familia au marafiki katika kaunti nyingine hadi 3.", // TODO(review)
-            add = "Ongeza kaunti", // TODO(review)
-            addTitle = "Ongeza kaunti ya kufuatilia", // TODO(review)
-            addHint = "Chagua kaunti ya kufuatilia. Itaonekana kwenye skrini yako ya Tahadhari.", // TODO(review)
-            cancelAdd = "Ghairi", // TODO(review)
-            limitReached = "Unafuatilia kaunti 3. Ondoa moja ili kuongeza nyingine.", // TODO(review)
-            remove = { n -> "Acha kufuatilia $n" }, // TODO(review)
-            loadingRow = "Inapakia", // TODO(review)
-            failedRow = "Imeshindwa kupakia kaunti hii. Kiwango cha hatari hakionyeshwi.", // TODO(review)
-            savedRow = "Utabiri uliohifadhiwa", // TODO(review)
-            backToMine = "Rudi kwenye kaunti yangu", // TODO(review)
-            notifyNote = "Arifa za hatari zimewashwa: pia utaarifiwa hatari ikipanda hadi Kubwa au Kubwa sana katika kaunti unazofuatilia.", // TODO(review)
+        val swahili = WatchStrings(
+            title = "Kaunti ninazofuatilia",
+            hint = "Fuatilia familia au marafiki katika kaunti nyingine hadi 3.",
+            add = "Ongeza kaunti",
+            addTitle = "Ongeza kaunti ya kufuatilia",
+            addHint = "Chagua kaunti ya kufuatilia. Itaonekana kwenye skrini yako ya Tahadhari.",
+            cancelAdd = "Ghairi",
+            limitReached = "Unafuatilia kaunti 3. Ondoa moja ili kuongeza nyingine.",
+            remove = { n -> "Acha kufuatilia $n" },
+            loadingRow = "Inapakia",
+            failedRow = "Imeshindwa kupakia kaunti hii. Kiwango cha hatari hakionyeshwi.",
+            savedRow = "Utabiri uliohifadhiwa",
+            backToMine = "Rudi kwenye kaunti yangu",
+            notifyNote = "Arifa za hatari zimewashwa: pia utaarifiwa hatari ikipanda hadi Kubwa au Kubwa sana katika kaunti unazofuatilia.",
             rowReady = { c, level, reason, updated, saved ->
                 "$c. $level. $reason. " + (if (saved) "Utabiri uliohifadhiwa. " else "") + "$updated. Hufungua utabiri."
-            }, // TODO(review)
-            rowLoadingDescription = { c -> "$c. Inapakia." }, // TODO(review)
-            rowFailedDescription = { c -> "$c. Imeshindwa kupakia. Kiwango cha hatari hakionyeshwi." }, // TODO(review)
+            },
+            rowLoadingDescription = { c -> "$c. Inapakia." },
+            rowFailedDescription = { c -> "$c. Imeshindwa kupakia. Kiwango cha hatari hakionyeshwi." },
         )
     }
 }

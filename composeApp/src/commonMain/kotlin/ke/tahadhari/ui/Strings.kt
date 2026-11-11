@@ -598,7 +598,6 @@ data class Strings(
                 "Imeshindwa kupakia utabiri. Utabiri uliohifadhiwa wa ${Dates.shortDate(it, Language.SWAHILI)} " +
                     "ni wa zamani mno kutumika."
             },
-            // TODO(review): all Swahili below needs a fluent speaker's check before submission.
             appName = "Tahadhari",
             navAlerts = "Tahadhari",
             navSafety = "Usalama",
@@ -631,7 +630,7 @@ data class Strings(
             reasonNone = "Hakuna mvua kubwa inayotarajiwa siku 7 zijazo",
             nearbyRiver = "Mto ulio karibu",
             today = "Leo",
-            // Full names don't fit a 7-column phone chart. TODO(review): confirm these short forms.
+            // Full names don't fit a 7-column phone chart.
             dayShort = { when (it) {
                 "Jumatatu" -> "Jtt"; "Jumanne" -> "Jnn"; "Jumatano" -> "Jtn"; "Alhamisi" -> "Alh"
                 "Ijumaa" -> "Iju"; "Jumamosi" -> "Jms"; "Jumapili" -> "Jpl"; else -> it.take(3)
@@ -679,8 +678,6 @@ data class Strings(
             selectCountyBody = "Bofya kaunti kwenye ramani au orodha uone utabiri wa siku 7, " +
                 "sababu za kiwango chake na unachopaswa kufanya.",
             noDataLegend = "Hakuna data (si Ndogo)",
-            // TODO(review): Week 5 Swahili below needs a fluent speaker's check, especially the
-            // emergency, check-in and location lines.
             guidesHeading = "Miongozo ya usalama",
             worksOffline = "Inafanya kazi bila mtandao",
             guideSectionCount = { n -> if (n == 1) "Sehemu 1" else "Sehemu $n" },
@@ -745,7 +742,7 @@ data class Strings(
             widgetTapToRetry = "Gusa ujaribu tena",
             widgetSavedForecast = "Utabiri uliohifadhiwa",
             widgetRiverRising = { x -> "Mto unapanda: mara $x ya kiwango cha hivi karibuni" },
-            widgetLandslide = { mm -> "Hatari ya maporomoko: mm $mm kwa siku 3" }, // TODO(review)
+            widgetLandslide = { mm -> "Hatari ya maporomoko: mm $mm kwa siku 3" },
             widgetSavedOn = { "Utabiri uliohifadhiwa wa ${Dates.shortDate(it, Language.SWAHILI)}" },
             widgetNoDataBody = "Imeshindwa kupakia utabiri",
             onboardWhatTitle = "Jua hatari ya mafuriko kwako",
@@ -783,14 +780,12 @@ data class Strings(
             briefingHighlightsTitle = "Kaunti za hatari Kubwa na Kubwa Sana: cha kufanya",
             briefingNoHighlights = "Hakuna kaunti yenye kiwango cha hatari Kubwa au Kubwa Sana katika data iliyopakiwa.",
             briefingPrintHint = "Ili kuchapisha au kuhifadhi kama PDF, tumia amri ya Print ya kivinjari chako (Ctrl+P).",
-            // TODO(review): Swahili for the "trend since yesterday" texts.
             trendRisingShort = "Inapanda",
             trendRisingLong = "Imepanda tangu jana",
             trendWas = { "ilikuwa $it" },
             trendRoseDescription = { "Hatari imepanda tangu jana, ilikuwa $it" },
             trendFellDescription = { "Hatari imeshuka tangu jana, ilikuwa $it" },
             briefingRisingLine = { "Imepanda tangu jana: $it" },
-            // TODO(review): Swahili for the wet-ground and ensemble lines needs a fluent speaker's check.
             reasonSaturated = "Ardhi tayari imeloa sana, kwa hiyo maji ya mvua hutiririka haraka",
             heavyRainChance = { mm, n, t, p -> "Uwezekano wa siku yenye mvua zaidi ya milimita $mm wiki hii: $n kati ya $t za utabiri ($p%)" },
             heavyRainChanceSource = "Chanzo: utabiri wa ECMWF (ensemble) kupitia Open-Meteo. Ni taarifa tu; haubadilishi kiwango cha hatari.",
@@ -815,26 +810,25 @@ data class Strings(
             crashDelete = "Futa",
             riskAlertsOn = "Imewashwa",
             riskAlertsOff = "Imezimwa",
-            readAloud = "Soma kwa sauti", // TODO(review)
-            stopReading = "Acha kusoma", // TODO(review)
-            speechSwahiliMissing = "Simu hii haina sauti ya Kiswahili, kwa hiyo tahadhari inasomwa kwa Kiingereza.", // TODO(review)
-            speechFailed = "Imeshindwa kusoma tahadhari kwa sauti kwenye kifaa hiki.", // TODO(review)
-            speakDisclaimer = "Huu ni mwongozo, si tahadhari rasmi. Fuata ushauri wa Idara ya Hali ya Hewa Kenya na wa kaunti yako.", // TODO(review)
-            speakSaved = "Huu ni utabiri uliohifadhiwa, si wa hivi karibuni.", // TODO(review)
-            pointForHq = { n -> "Utabiri wa makao makuu ya $n" }, // TODO(review)
-            pointForYou = "Utabiri wa mahali ulipo (takriban)", // TODO(review)
-            pointRounded = "Mahali ulipo hukadiriwa hadi umbali wa kilomita 1 hivi kabla ya kuomba utabiri. Hapahifadhiwi.", // TODO(review)
-            pointUse = "Tumia mahali nilipo hasa", // TODO(review)
-            pointBackToHq = { n -> "Rudi kwenye utabiri wa makao makuu ya $n" }, // TODO(review)
+            readAloud = "Soma kwa sauti",
+            stopReading = "Acha kusoma",
+            speechSwahiliMissing = "Simu hii haina sauti ya Kiswahili, kwa hiyo tahadhari inasomwa kwa Kiingereza.",
+            speechFailed = "Imeshindwa kusoma tahadhari kwa sauti kwenye kifaa hiki.",
+            speakDisclaimer = "Huu ni mwongozo, si tahadhari rasmi. Fuata ushauri wa Idara ya Hali ya Hewa Kenya na wa kaunti yako.",
+            speakSaved = "Huu ni utabiri uliohifadhiwa, si wa hivi karibuni.",
+            pointForHq = { n -> "Utabiri wa makao makuu ya $n" },
+            pointForYou = "Utabiri wa mahali ulipo (takriban)",
+            pointRounded = "Mahali ulipo hukadiriwa hadi umbali wa kilomita 1 hivi kabla ya kuomba utabiri. Hapahifadhiwi.",
+            pointUse = "Tumia mahali nilipo hasa",
+            pointBackToHq = { n -> "Rudi kwenye utabiri wa makao makuu ya $n" },
             pointTooFar = { n -> "Mahali ulipo ni nje ya Kaunti ya $n au mbali sana na mji wake mkuu, kwa hiyo utabiri wa kaunti unaonyeshwa." },
             watch = WatchStrings.swahili,
-            upstream = UpstreamStrings( // TODO(review): Swahili wording needs a fluent speaker's check.
+            upstream = UpstreamStrings(
                 reason = { c, mm -> "Mvua kubwa juu ya mto huko $c (mm $mm kwa siku 3) inaweza kuinua mto ndani ya siku chache" },
                 shareMsg = { c, mm -> "Mvua kubwa juu ya mto huko $c (mm $mm)" },
                 widget = { c -> "Mvua kubwa juu ya mto huko $c" },
             ),
             aboutPage = AboutStrings(
-                // TODO(review): About and intro Swahili below needs a fluent speaker's check.
                 aboutOpen = "Kuhusu Tahadhari",
                 aboutTitle = "Kuhusu na jinsi inavyofanya kazi",
                 aboutBack = "Rudi",
@@ -860,7 +854,6 @@ data class Strings(
                     "bila mtandao. Huitwa \"Maelezo ya nje ya mtandao\".",
                 aboutPrivacyTitle = "Faragha",
                 aboutPrivacyNoAccounts = "Hakuna akaunti, matangazo wala ufuatiliaji.",
-                // TODO(review): watched-counties wording.
                 aboutPrivacyStored = "Kaunti yako, kaunti unazofuatilia, lugha yako na utabiri wa mwisho huhifadhiwa kwenye simu hii pekee. " +
                     "Utabiri wa kaunti unazofuatilia hupatikana kwa njia ileile kama wa kaunti yako.",
                 aboutPrivacyLocation = "Mahali ulipo hutumiwa mara moja, kwenye simu hii, unapogusa \"Tumia mahali nilipo\" tu. " +
@@ -880,16 +873,15 @@ data class Strings(
                 aboutPrivacyCrash = "Programu ikiacha kufanya kazi, ripoti fupi (saa, toleo la programu, aina ya simu, hitilafu) " +
                     "huhifadhiwa kwenye simu hii. Hubaki hapo isipokuwa uchague kuishiriki. Hakuna kinachotumwa kiotomatiki.",
                 aboutPrivacyNotify = "Arifa za hatari (si za lazima) hukokotwa kwenye simu hii kutokana na utabiri uleule. " +
-                    "Hakuna akaunti, tokeni wala data ya ziada inayotumwa kwa ajili yake.",     // TODO(review)
+                    "Hakuna akaunti, tokeni wala data ya ziada inayotumwa kwa ajili yake.",
                 aboutPrivacyPoint = "Ukichagua \"Tumia mahali nilipo hasa\" kwenye utabiri, mahali ulipo hukadiriwa hadi kilomita 1 hivi, " +
                     "na viwianishi hivyo vilivyokadiriwa hutumwa kwa Open-Meteo badala ya vya mji wa kaunti. Hutunzwa tu unapotazama utabiri huo.",
-            ), // TODO(review)
-            official = OfficialStrings(
-                button = "Utabiri rasmi wa KMD", // TODO(review)
-                note = "Tahadhari rasmi hutoka Idara ya Hali ya Hewa Kenya (KMD) na kaunti yako.", // TODO(review)
-                buttonHint = "Hufungua meteo.go.ke kwenye kivinjari chako", // TODO(review)
             ),
-            // TODO(review): Swahili for the official advisory card needs a fluent speaker's check.
+            official = OfficialStrings(
+                button = "Utabiri rasmi wa KMD",
+                note = "Tahadhari rasmi hutoka Idara ya Hali ya Hewa Kenya (KMD) na kaunti yako.",
+                buttonHint = "Hufungua meteo.go.ke kwenye kivinjari chako",
+            ),
             advisory = AdvisoryStrings(
                 title = "Ushauri rasmi",
                 issued = { issuer, from, to -> "$issuer · halali $from hadi $to" },

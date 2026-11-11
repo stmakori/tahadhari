@@ -3,7 +3,7 @@ package ke.tahadhari.data
 import ke.tahadhari.domain.Advisory
 
 /**
- * Official advisories shipped with the app (KMSA/KMD has no public API, see CLAUDE.md "Data sources").
+ * Official advisories shipped with the app (KMSA/KMD has no public API, see README "Official advisories").
  *
  * To update (weekly in the rains):
  * 1. Open https://meteo.go.ke/our-products/county-forecasts/ and the county's page for this week.

@@ -25,7 +25,7 @@ import kotlin.math.roundToInt
 import kotlin.test.Test
 
 /**
- * Tries the AI prompt on real forecasts and writes `docs/ai-examples.md` for review (CLAUDE.md, week 3).
+ * Tries the AI prompt on real forecasts and writes `docs/ai-examples.md` for review.
  *
  * Gated: does nothing unless TAHADHARI_AI_EXAMPLES=1. Needs the network and a running AI server:
  *

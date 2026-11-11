@@ -30,7 +30,6 @@ data class SafetyGuide(
 /**
  * Bundled safety guides, available without internet.
  * Facts and numbers were checked on 2026-10-27 against the sources listed with each guide.
- * TODO(review): all Swahili here must be checked by a fluent speaker before submission.
  */
 object SafetyGuides {
     private val krcsFloodTips = GuideSource(

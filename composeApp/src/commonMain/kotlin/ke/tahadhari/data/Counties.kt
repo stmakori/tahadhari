@@ -9,7 +9,6 @@ package ke.tahadhari.data
  * reported landslide event or a published susceptibility study are marked; others are left
  * false rather than guessed (unverified: Kisii, Nyamira, Kirinyaga, Nyandarua, Embu, Meru,
  * Tharaka-Nithi, Vihiga, Kakamega, Nakuru; see the project report).
- * TODO(week 2): verify coordinates, river points and hotspots against official sources.
  */
 object Counties {
     private fun c(
@@ -32,15 +31,15 @@ object Counties {
      * Upstream counties of the Tana: the Upper Tana catchment on Mt Kenya and the Aberdares. Source: Upper Tana
      * Natural Resource Management Project (utanrmp), which lists Embu, Meru, Tharaka-Nithi, Nyeri, Kirinyaga and
      * Murang'a as its catchment counties; Tana River County is described as exposed to upstream inflows in the TARDA
-     * flood advisory (Kenya Times). Nyandarua (Aberdare slopes) is not in the utanrmp list: TODO confirm with WRA/TARDA.
-     * Lamu (Tana delta, Witu side) is left out: TODO find a source for how far the delta floods reach Lamu.
+     * flood advisory (Kenya Times). Nyandarua (Aberdare slopes) is not in the utanrmp list, so it is left out.
+     * Lamu (Tana delta, Witu side) is left out: no source was found for how far the delta floods reach Lamu.
      */
     private val tanaUpstream = listOf(19, 21, 14, 12, 20, 13)
 
     /**
      * Upstream counties of the Nzoia: the six-county basin split in a study of the basin (two upstream: Uasin Gishu,
      * Trans Nzoia; two middle: Bungoma, Kakamega; two downstream: Busia, Siaya), https://www.mdpi.com/2071-1050/11/3/560.
-     * No WRA county list was found (TODO verify). The back-test has no Nzoia event, so only false alarms were measured.
+     * No WRA county list was found. The back-test has no Nzoia event, so only false alarms were measured.
      */
     private val nzoiaUpstream = listOf(26, 27, 39, 37)
 

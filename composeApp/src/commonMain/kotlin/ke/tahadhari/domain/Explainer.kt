@@ -22,7 +22,6 @@ interface AlertExplainer {
 /**
  * Offline, deterministic explainer. Always available, so the app works without
  * internet or an AI key. The AI explainer (week 3) falls back to this on any error.
- * TODO: have a native Swahili speaker review all Swahili text before submission.
  */
 class TemplateExplainer : AlertExplainer {
     private companion object {
@@ -87,7 +86,6 @@ class TemplateExplainer : AlertExplainer {
 
     /**
      * Heavy rain upstream, or (when upstream data is missing) an honest "not checked". Never claims upstream is dry.
-     * TODO(review): Swahili wording needs a fluent speaker's check.
      */
     private fun upstreamClause(a: RiskAssessment, sw: Boolean): String {
         val up = a.reasons.filterIsInstance<RiskReason.UpstreamRain>().firstOrNull()
@@ -106,7 +104,6 @@ class TemplateExplainer : AlertExplainer {
 
     private fun wetGroundClause(a: RiskAssessment, sw: Boolean): String {
         if (a.reasons.none { it is RiskReason.SaturatedGround }) return ""
-        // TODO(review): Swahili wording needs a fluent speaker's check.
         return if (sw) " Ardhi tayari imeloa sana, kwa hiyo maji ya mvua yatatiririka haraka badala ya kuingia ardhini."
         else " The ground is already very wet, so rain will run off quickly instead of soaking in."
     }

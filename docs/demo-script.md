@@ -63,22 +63,20 @@ Record the emulator with the Kenya test data below. Show the real app; never fak
 | 1:45 to 1:55 | Click the High filter chip, hover a county on the map, select a row; detail pane opens beside the list. | "Filter to High and Severe, hover the map, and see the same plain-language detail side by side." | "Filter, hover, compare" |
 | 1:55 to 2:05 | Header menu: export CSV and the HTML briefing; open the briefing in a browser. Show auto-refresh toggle. | "Export a CSV or a printable briefing for the morning meeting. Data refreshes on its own without blanking the screen." | "CSV and briefing export" |
 
-### 4. Validation (2:05 to 2:20)  PLACEHOLDER
+### 4. Validation (2:05 to 2:20)
 
-`docs/validation.md` is being written by another agent. Fill this block from it once it is final;
-do not claim results before then.
+Numbers from `docs/validation.md` (back-test of the March-May 2024 floods, ECMWF forecast). Say them
+exactly as written; do not round up.
 
 | Time | On screen | Voice-over | Caption |
 |---|---|---|---|
-| 2:05 to 2:20 | [TODO: one chart or table from docs/validation.md, for example how the thresholds compared with past events] | [TODO: two sentences, about 35 words, stating the method and the honest result, including limits] | [TODO] |
-
-If validation is not ready, delete this block and extend section 5 by 15 s.
+| 2:05 to 2:20 | The results-per-event table from `docs/validation.md` section 2, with the Tana River and Garissa rows highlighted. | "I back-tested the real risk engine on the 2024 floods. With free forecasts it reached High for two of seven documented events, both through the river signal. That is why it says guidance, not warning." | "Back-test, Mar-May 2024: 2 of 7 events reached High" |
 
 ### 5. Kotlin Multiplatform (2:20 to 2:42)
 
 | Time | On screen | Voice-over | Caption |
 |---|---|---|---|
-| 2:20 to 2:42 | Split screen: Android emulator and desktop window running the same screen. Then a simple diagram of modules: `commonMain` (domain, data, UI) shared by Android and desktop; `shared` AI contract used by the app and the Ktor server; web target [TODO: confirm once the wasm/web target is merged and show it running in a browser]. | "One Kotlin codebase. The risk engine, data layer and Compose Multiplatform UI are shared by Android and desktop. The AI contract and prompt live in a shared module used by both the app and a small Ktor server, so the API key never ships in the app. AI text is advisory only, and always falls back to an offline template. [TODO if shipped: The same code also runs in the browser.]" | "Kotlin Multiplatform: Android, desktop, Ktor server, web [TODO]" |
+| 2:20 to 2:42 | Split screen: Android emulator and desktop window running the same screen. Then a simple diagram of modules: `commonMain` (domain, data, UI) shared by Android and desktop; `shared` AI contract used by the app and the Ktor server; the web target (Kotlin/Wasm), shown running in a browser at stmakori.github.io/tahadhari. | "One Kotlin codebase. The risk engine, data layer and Compose Multiplatform UI are shared by Android and desktop. The AI contract and prompt live in a shared module used by both the app and a small Ktor server, so the API key never ships in the app. AI text is advisory only, and always falls back to an offline template. The same code also runs in the browser." | "Kotlin Multiplatform: Android, desktop, web, Ktor server" |
 
 ### 6. Close (2:42 to 2:55)
 

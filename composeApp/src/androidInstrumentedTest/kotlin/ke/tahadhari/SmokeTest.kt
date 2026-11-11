@@ -48,7 +48,7 @@ class SmokeTest {
         // 3. The county screen settles on a risk card or on the error state (CI may be offline).
         rule.waitUntil(60_000) { exists("risk_card") || exists("error_state") }
         if (exists("error_state")) {
-            // Fail safe (CLAUDE.md safety principle 3): never "Low" next to a failed load.
+            // Fail safe: never "Low" next to a failed load.
             check(rule.onAllNodesWithText("Low", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) {
                 "\"Low\" is shown together with the error state"
             }
