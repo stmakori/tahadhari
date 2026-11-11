@@ -7,6 +7,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
@@ -20,10 +21,14 @@ fun interface LlmCompleter {
     suspend fun complete(system: String, user: String): String
 }
 
-/** Calls the Anthropic Messages API. Docs: https://docs.claude.com/en/api/messages */
+/**
+ * Calls the Anthropic Messages API, on the Claude API or Claude Platform on AWS (see [ClaudeEndpoint]).
+ * Docs: https://docs.claude.com/en/api/messages
+ */
 class AnthropicCompleter(
     private val apiKey: String,
     private val model: String,
+    private val endpoint: ClaudeEndpoint = ClaudeEndpoint.CLAUDE_API,
     private val http: HttpClient = HttpClient {
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true; explicitNulls = false }) }
         install(HttpTimeout) { requestTimeoutMillis = 20_000 }
@@ -31,13 +36,22 @@ class AnthropicCompleter(
 ) : LlmCompleter {
 
     override suspend fun complete(system: String, user: String): String {
-        val response = http.post("https://api.anthropic.com/v1/messages") {
-            header("x-api-key", apiKey)
+        val response = http.post("${endpoint.baseUrl}/v1/messages") {
+            if (endpoint.awsWorkspaceId == null) {
+                header("x-api-key", apiKey)
+            } else {
+                header("Authorization", "Bearer $apiKey")
+                header("anthropic-workspace-id", endpoint.awsWorkspaceId)
+            }
             header("anthropic-version", "2023-06-01")
             contentType(ContentType.Application.Json)
             setBody(MessagesRequest(model, maxTokens = 600, system = system, messages = listOf(Message("user", user))))
         }
-        check(response.status.isSuccess()) { "Anthropic API returned ${response.status}" }
+        if (!response.status.isSuccess()) {
+            // The error body says why (bad key, no model access, no credit). It never contains the key.
+            val detail = runCatching { response.bodyAsText() }.getOrDefault("").replace(Regex("\\s+"), " ").take(300)
+            error("Anthropic API returned ${response.status}: $detail")
+        }
         return response.body<MessagesResponse>().content
             .filter { it.type == "text" }
             .joinToString("") { it.text.orEmpty() }

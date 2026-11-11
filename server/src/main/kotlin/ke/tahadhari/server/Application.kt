@@ -39,8 +39,8 @@ private val explainLimit = RateLimitName("explain")
 
 fun main() {
     val config = ServerConfig.fromEnv()
-    val llm = AnthropicCompleter(config.apiKey, config.model)
-    log.info("Tahadhari AI server on port ${config.port}, model ${config.model}")
+    val llm = AnthropicCompleter(config.apiKey, config.model, config.endpoint)
+    log.info("Tahadhari AI server on port ${config.port}, model ${config.model} via ${config.endpoint.baseUrl}")
     embeddedServer(Netty, port = config.port, host = "0.0.0.0") {
         module(llm, requestsPerHour = config.requestsPerHour, allowedOrigins = config.allowedOrigins, trustedProxyHops = config.trustedProxyHops)
     }.start(wait = true)

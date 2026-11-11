@@ -243,6 +243,8 @@ gcloud run deploy tahadhari-ai --source . --region europe-west1 --allow-unauthen
 |---|---|---|
 | `ANTHROPIC_API_KEY` | (required) | Store it as a secret on the host, never in the image or the repo |
 | `TAHADHARI_MODEL` | `claude-haiku-5-5` | Model id |
+| `ANTHROPIC_AWS_WORKSPACE_ID` | (unset) | Set it (`wrkspc_...`) to use [Claude Platform on AWS](https://platform.claude.com/docs/en/build-with-claude/claude-platform-on-aws) instead of the Claude API. Then `ANTHROPIC_API_KEY` (or `ANTHROPIC_AWS_API_KEY`) holds the API key from the AWS console |
+| `AWS_REGION` | (unset) | Region of that workspace, for example `us-west-2`; required with `ANTHROPIC_AWS_WORKSPACE_ID` |
 | `TAHADHARI_REQUESTS_PER_HOUR` | 60 | Per caller address |
 | `TAHADHARI_TRUSTED_PROXY_HOPS` | 0 | Load balancers in front of the server that append to `X-Forwarded-For`. Most hosts have one, so set it to `1` (check your host's docs). With `0` behind a load balancer, all users share one rate limit |
 | `TAHADHARI_ALLOWED_ORIGINS` | local dev server | Web build origins (see above) |

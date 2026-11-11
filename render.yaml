@@ -12,6 +12,8 @@ services:
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
+      # Claude API key, or the API key from Claude Platform on AWS. For the AWS platform, also add
+      # ANTHROPIC_AWS_WORKSPACE_ID (wrkspc_...) and AWS_REGION in the dashboard's Environment tab.
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: TAHADHARI_ALLOWED_ORIGINS
