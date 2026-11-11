@@ -49,6 +49,16 @@ class ClaudeEndpointTest {
         assertNull(r.headers["x-api-key"])
     }
 
+    @Test fun sendsThinkingDisabledAndReportsCutOffReply() = runBlocking {
+        val (llm, seen) = capture(ClaudeEndpoint.CLAUDE_API)
+        llm.complete("s", "u")
+        val sent = (seen.single().body as io.ktor.http.content.TextContent).text
+        assertTrue(""""thinking":{"type":"disabled"}""" in sent, sent)
+        val (cut, _) = capture(ClaudeEndpoint.CLAUDE_API, body = """{"content":[{"type":"text","text":"{\"head"}],"stop_reason":"max_tokens"}""")
+        val e = assertFailsWith<IllegalStateException> { cut.complete("s", "u") }
+        assertTrue("cut off" in e.message.orEmpty(), e.message)
+    }
+
     @Test fun errorIncludesReasonFromBody() = runBlocking {
         val (llm, _) = capture(ClaudeEndpoint.CLAUDE_API, HttpStatusCode.Unauthorized,
             """{"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}""")
