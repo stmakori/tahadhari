@@ -12,6 +12,8 @@ with clear advice on what to do.
 - **Web**: the same dashboard in a browser, with nothing to install:
   **[stmakori.github.io/tahadhari](https://stmakori.github.io/tahadhari/)** (add `?mobile` for the phone layout).
 
+**▶️ [Watch the demo video](https://drive.google.com/file/d/1-t9035zLP8boXLHMrrV-gsa-zdlV_GF1/view?usp=sharing)**: the main features on Android, desktop and web.
+
 ![Tahadhari walkthrough: intro, county picker, Tana River in English and Swahili, safety guide, emergency, dashboard](docs/demo.gif)
 
 ## Features
